@@ -1,12 +1,28 @@
 {% extends "base.html" %}
-{% block title %}Account{% endblock %}
+{% block title %}My account{% endblock %}
 {% block body %}
-<h1>Account</h1>
+<h1>My account</h1>
 {% if msg %}<div class="msg">{{ msg }}</div>{% endif %}
-<form class="card" method="post" style="max-width:420px">
-  <div class="small muted" style="margin-bottom:10px">{{ me.username }} · {{ me.role }}</div>
-  <label>Current password</label><input type="password" name="old" required autocomplete="current-password">
-  <label style="margin-top:10px">New password (8+ characters)</label><input type="password" name="new" required minlength="8" autocomplete="new-password">
-  <button class="btn g" style="margin-top:14px">Change password</button>
-</form>
+{% if err %}<div class="err" style="margin-bottom:14px">{{ err }}</div>{% endif %}
+<div class="acct">
+  <form class="card" method="post" action="/account/profile" autocomplete="off">
+    <h2>Profile</h2>
+    <label>Full name</label><input name="name" value="{{ me.name }}" required>
+    <label style="margin-top:12px">Username (login ID)</label><input name="username" value="{{ me.username }}" required>
+    <label style="margin-top:12px">Current password <span class="muted" style="font-weight:500">(only needed to change the username)</span></label>
+    <input name="password" type="password" autocomplete="current-password">
+    <div class="small muted" style="margin-top:8px">Role: <b>{{ me.role }}</b></div>
+    <button class="btn g" style="margin-top:14px">Save profile</button>
+  </form>
+
+  <form class="card" method="post" action="/account" autocomplete="off">
+    <h2>Password</h2>
+    <label>Current password</label><input type="password" name="old" required autocomplete="current-password">
+    <label style="margin-top:12px">New password (6+ characters)</label><input type="password" name="new" required minlength="6" autocomplete="new-password">
+    <label style="margin-top:12px">New password again</label><input type="password" name="new2" required minlength="6" autocomplete="new-password">
+    <button class="btn g" style="margin-top:14px">Change password</button>
+  </form>
+
+  {% with next_url = '/account' %}{% include "_monitor_card.html" %}{% endwith %}
+</div>
 {% endblock %}

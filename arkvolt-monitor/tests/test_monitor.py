@@ -20,7 +20,7 @@ def login():
 
 def new_device(name):
     r = c.post("/devices", data={"staff_name": name, "label": "laptop"})
-    return re.search(r'word-break:break-all">([^<]+)<', r.text).group(1)
+    return re.search(r'id="newkey">([^<]+)<', r.text).group(1)
 
 
 def test_full_flow():
@@ -57,3 +57,45 @@ def test_full_flow():
     dev_id = re.findall(r'action="/devices/(\d+)/toggle"', c.get("/devices").text)[0]
     c.post(f"/devices/{dev_id}/toggle")
     assert c.get("/api/v1/ping", headers=H).status_code == 401  # disabled device is cut off
+
+
+def test_staff_login_new_key_and_edit():
+    login()
+    r = c.post("/devices", data={"staff_name": "Anu S", "label": "HP", "login_username": "anu", "login_password": "anu-pass-123"})
+    tok = re.search(r'id="newkey">([^<]+)<', r.text).group(1)
+    other = new_device("Rahul K")
+    for t, cust in ((tok, "Anu Customer"), (other, "Rahul Customer")):
+        c.post("/api/v1/proposals", headers={"X-Device-Token": t}, json={"local_id": 1, "customer": cust, "kw_text": "3 kW",
+               "options": [{"letter": "A", "type": "ongrid", "kw": 3, "price": 200000}]})
+    ap = c.post("/api/v1/approvals", headers={"X-Device-Token": tok}, json={"local_id": 2, "customer": "Anu Big", "kw_text": "8 kW"}).json()
+
+
+
+    # staff login: only their own proposals and approvals, cannot approve or manage
+    c.get("/logout")
+    assert c.post("/login", data={"username": "anu", "password": "anu-pass-123"}, follow_redirects=False).status_code == 303
+    html = c.get("/").text
+    assert "Anu Customer" in html and "Rahul Customer" not in html and "My proposals" in html
+    assert "Anu Big" in c.get("/approvals").text and "✓ Approve" not in c.get("/approvals").text
+    assert c.post(f"/approvals/{ap['id']}", data={"decision": "Approved"}).status_code == 403
+    assert c.get("/devices").status_code == 403
+    assert "Rahul" not in c.get("/export.csv").text
+    c.post("/account", data={"old": "anu-pass-123", "new": "anu-new-456", "new2": "anu-new-456"})
+    c.get("/logout")
+    assert c.post("/login", data={"username": "anu", "password": "anu-new-456"}, follow_redirects=False).status_code == 303
+    c.get("/logout")
+
+    # admin: new key replaces the old one; edit renames the login
+    login()
+    dev = re.search(r'<b>Anu S</b>.*?action="/devices/(\d+)/key"', c.get("/devices").text, re.S).group(1)
+    new = re.search(r'id="newkey">([^<]+)<', c.post(f"/devices/{dev}/key").text).group(1)
+    assert c.get("/api/v1/ping", headers={"X-Device-Token": tok}).status_code == 401
+    assert c.get("/api/v1/ping", headers={"X-Device-Token": new}).json()["staff"] == "Anu S"
+    c.post(f"/devices/{dev}", data={"staff_name": "Anu Suresh", "label": "HP", "login_username": "anu.s", "login_password": ""})
+    page = c.get("/devices").text
+    assert "Anu Suresh" in page and 'value="anu.s"' in page
+    assert "manager/admin login" in c.post(f"/devices/{dev}", data={"staff_name": "Anu Suresh", "login_username": "admin"}).text
+    c.get("/logout")
+    assert c.post("/login", data={"username": "anu.s", "password": "anu-new-456"}, follow_redirects=False).status_code == 303
+    c.get("/logout")
+    login()

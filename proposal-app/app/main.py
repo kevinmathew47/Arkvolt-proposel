@@ -10,12 +10,12 @@ from fastapi import Depends, FastAPI, File, Form, HTTPException, Request, Upload
 from fastapi.responses import FileResponse, HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from starlette.concurrency import run_in_threadpool
 from starlette.middleware.sessions import SessionMiddleware
 
 from . import billparse, compute as C, engine as E, monitor, pdfgen
-from .db import (DATA, ROOT, Audit, Company, Package, Product, Proposal, ProposalVersion, RefCounter, RuleVersion,
+from .db import (DATA, ROOT, Audit, Company, Outbox, Package, Product, Proposal, ProposalVersion, RefCounter, RuleVersion,
                  SessionLocal, Setting, TariffVersion, TemplateText, User, audit, init_db)
 
 FIRST_LOGIN = init_db()
@@ -384,8 +384,8 @@ def approve(pid: int, u: User = Depends(need("manager")), s=Depends(db)):
 # Admin
 # ---------------------------------------------------------------------------------------------
 @app.get("/admin", response_class=HTMLResponse)
-def admin(request: Request, tab: str = "company", msg: str = "", u: User = Depends(need("admin")), s=Depends(db)):
-    ctx = dict(tab=tab, msg=msg,
+def admin(request: Request, tab: str = "company", msg: str = "", err: str = "", u: User = Depends(need("admin")), s=Depends(db)):
+    ctx = dict(tab=tab, msg=msg, err=err, mon=_monitor_info(s),
                companies=s.scalars(select(Company)).all(),
                products=s.scalars(select(Product).order_by(Product.category, Product.code)).all(),
                packages=s.scalars(select(Package).order_by(Package.brand, Package.kw, Package.type)).all(),
@@ -600,7 +600,7 @@ async def setup_save(request: Request, s=Depends(db)):
             who = await run_in_threadpool(monitor.ping, monitor.config(s))
             note = f"Connected to the dashboard as {who}."
         except RuntimeError as e:
-            note = f"Saved, but the dashboard test failed: {e} You can fix it later in Admin → Settings."
+            note = f"Saved, but the dashboard test failed: {e} You can fix it later on the Account page."
     audit(s, staff.id, "setup", {"staff": uname, "monitor": bool(f.get("monitor_key"))})
     s.commit()
     SETUP_MARKER.unlink(missing_ok=True)
@@ -608,30 +608,87 @@ async def setup_save(request: Request, s=Depends(db)):
     return page(request, "setup_done.html", staff, note=note)
 
 
-@app.post("/admin/monitor/test")
-async def admin_monitor_test(u: User = Depends(need("admin")), s=Depends(db)):
+def _go(url, **kw):
+    from urllib.parse import urlencode
+    return RedirectResponse(url + ("&" if "?" in url else "?") + urlencode(kw), status_code=303)
+
+
+def _monitor_info(s):
+    cfg = monitor.config(s)
+    return {"url": cfg["url"], "key_set": bool(cfg["key"]), "waiting": s.scalar(select(func.count(Outbox.id))) or 0}
+
+
+@app.post("/account/monitor")
+async def account_monitor(monitor_url: str = Form(None), monitor_key: str = Form(""), next: str = Form("/account"),
+                          u: User = Depends(user), s=Depends(db)):
+    """Dashboard connection of this laptop: anyone signed in may enter / replace the device key (blank = keep);
+    only the admin may change the dashboard address. Always tests the connection after saving."""
+    next = next if next in ("/account", "/admin?tab=settings") else "/account"
+    changed = []
+    if monitor_url is not None and u.role == "admin" and monitor_url.strip().rstrip("/") != monitor.config(s)["url"]:
+        x = s.get(Setting, "monitor_url") or Setting(key="monitor_url")
+        x.value = monitor_url.strip().rstrip("/")
+        s.add(x)
+        changed.append("address")
+    if monitor_key.strip():
+        x = s.get(Setting, "monitor_key") or Setting(key="monitor_key")
+        x.value = monitor_key.strip()
+        s.add(x)
+        changed.append("device key")
+    if changed:
+        audit(s, u.id, "monitor.settings", {"changed": changed})
+    s.commit()
+    saved = ("Saved the " + " and ".join(changed) + ". ") if changed else ""
     try:
         staff = await run_in_threadpool(monitor.ping, monitor.config(s))
     except RuntimeError as e:
-        return _back("settings", f"Monitor test failed: {e}")
+        return _go(next, err=f"{saved}Connection test failed: {e}")
     monitor.flush()
-    return _back("settings", f"Connected to the monitor as {staff}")
+    return _go(next, msg=f"{saved}Connected to the online dashboard as {staff}.")
+
+
+@app.post("/admin/monitor/test")
+async def admin_monitor_test(u: User = Depends(need("admin")), s=Depends(db)):
+    return await account_monitor(monitor_url=None, monitor_key="", next="/admin?tab=settings", u=u, s=s)
 
 
 @app.get("/account", response_class=HTMLResponse)
-def account(request: Request, msg: str = "", u: User = Depends(user)):
-    return page(request, "account.html", u, msg=msg)
+def account(request: Request, msg: str = "", err: str = "", u: User = Depends(user), s=Depends(db)):
+    return page(request, "account.html", u, msg=msg, err=err, mon=_monitor_info(s))
+
+
+@app.post("/account/profile")
+def account_profile(name: str = Form(""), username: str = Form(""), password: str = Form(""),
+                    u: User = Depends(user), s=Depends(db)):
+    x = s.get(User, u.id)
+    uname = username.strip().lower() or x.username
+    if not name.strip():
+        return _go("/account", err="Enter your name.")
+    if uname != x.username:
+        if not uname.replace(".", "").replace("_", "").isalnum():
+            return _go("/account", err="Username: letters and numbers only (dot and underscore allowed).")
+        if s.scalar(select(User).where(User.username == uname)):
+            return _go("/account", err=f"The username '{uname}' is already taken.")
+        if not x.check_password(password):
+            return _go("/account", err="To change your username, enter your current password.")
+    old = x.username
+    x.name, x.username = name.strip(), uname
+    audit(s, u.id, "account.profile", {"name": x.name, "username": uname, "was": old})
+    s.commit()
+    return _go("/account", msg="Profile saved" + (f". Your new username is {uname}." if uname != old else "."))
 
 
 @app.post("/account")
-def account_save(old: str = Form(...), new: str = Form(...), u: User = Depends(user), s=Depends(db)):
+def account_save(old: str = Form(...), new: str = Form(...), new2: str = Form(None), u: User = Depends(user), s=Depends(db)):
     x = s.get(User, u.id)
     if not x.check_password(old):
-        return RedirectResponse("/account?msg=Current password is wrong", status_code=303)
-    if len(new) < 8:
-        return RedirectResponse("/account?msg=Use at least 8 characters", status_code=303)
+        return _go("/account", err="Current password is wrong.")
+    if len(new) < 6:
+        return _go("/account", err="Use at least 6 characters for the new password.")
+    if new2 is not None and new != new2:
+        return _go("/account", err="The two new passwords are not the same.")
     x.set_password(new)
     audit(s, u.id, "password.change")
     s.commit()
-    (DATA / "FIRST_LOGIN.txt").unlink(missing_ok=True) if x.username == "admin" else None
-    return RedirectResponse("/account?msg=Password changed", status_code=303)
+    (DATA / "FIRST_LOGIN.txt").unlink(missing_ok=True) if x.role == "admin" else None
+    return _go("/account", msg="Password changed.")

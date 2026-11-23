@@ -2,7 +2,7 @@
 <html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{% block title %}Proposal Monitor{% endblock %} · ARKVOLT</title>
 <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-<link rel="stylesheet" href="/static/app.css">
+<link rel="stylesheet" href="/static/app.css?v=2">
 <link rel="icon" href="/static/mark-green.svg">
 <style>.kpi b{font-size:26px;display:block;line-height:1.2}.kpi span{color:var(--muted);font-size:12px}.t-ongrid{background:#E3EEF8;color:var(--blue)}.t-hybrid{background:var(--mint);color:var(--gd)}.t-offgrid{background:#FFF3D6;color:var(--amber)}</style>
 </head><body>
@@ -10,11 +10,11 @@
 <header class="top">
   <a href="/"><img src="/static/logo-reversed.svg" alt="ARKVOLT"></a>
   <nav>
-    <a href="/" class="{{ 'on' if request.url.path == '/' }}">Proposals</a>
-    <a href="/approvals" class="{{ 'on' if request.url.path == '/approvals' }}">Approvals</a>
+    <a href="/" class="{{ 'on' if request.url.path == '/' }}">{{ 'My proposals' if me.role == 'staff' else 'Proposals' }}</a>
+    <a href="/approvals" class="{{ 'on' if request.url.path == '/approvals' }}">{{ 'My approvals' if me.role == 'staff' else 'Approvals' }}</a>
     {% if me.role == 'admin' %}<a href="/devices" class="{{ 'on' if request.url.path == '/devices' }}">Staff &amp; devices</a>{% endif %}
   </nav>
-  <div class="me">{{ me.name or me.username }} · {{ me.role }} <a href="/logout">Log out</a></div>
+  <div class="me">{{ me.name or me.username }} · {{ me.role }} <a href="/account">Account</a> <a href="/logout">Log out</a></div>
 </header>
 {% endif %}
 <main>{% block body %}{% endblock %}</main>

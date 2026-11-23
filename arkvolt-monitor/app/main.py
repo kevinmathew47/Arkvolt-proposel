@@ -16,7 +16,7 @@ from fastapi import Depends, FastAPI, Form, Header, HTTPException, Request
 from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
-from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine, func, select
+from sqlalchemy import JSON, inspect, text, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine, func, select
 from sqlalchemy.orm import DeclarativeBase, relationship, sessionmaker
 from starlette.middleware.sessions import SessionMiddleware
 
@@ -67,7 +67,7 @@ class Base(DeclarativeBase):
     pass
 
 
-class User(Base):  # people who log in to the dashboard (admin / manager)
+class User(Base):  # dashboard logins: admin / manager (everything) or staff (only their own laptops)
     __tablename__ = "users"
     id = Column(Integer, primary_key=True)
     username = Column(String(60), unique=True)
@@ -97,6 +97,8 @@ class Device(Base):  # one staff laptop; identified by a secret token stored in 
     active = Column(Boolean, default=True)
     created_at = Column(DateTime, default=now)
     last_seen = Column(DateTime, nullable=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=True)  # the staff member's own dashboard login
+    user = relationship("User")
 
 
 class ProposalEvent(Base):  # latest state of each proposal version made on a laptop
@@ -141,8 +143,17 @@ class Approval(Base):
     device = relationship("Device")
 
 
+def _add_missing_columns():
+    """create_all() makes new tables but never adds columns to existing ones (the live Postgres database)."""
+    have = {c["name"] for c in inspect(engine).get_columns("devices")}
+    if "user_id" not in have:
+        with engine.begin() as cx:
+            cx.execute(text("ALTER TABLE devices ADD COLUMN user_id INTEGER REFERENCES users(id)"))
+
+
 try:
     Base.metadata.create_all(engine)
+    _add_missing_columns()
 except Exception as e:  # noqa: BLE001 — wrong / unreachable database
     SETUP_PROBLEMS.append(f"Cannot open the database: {type(e).__name__}: {str(e)[:200]}. Check DATABASE_URL in Vercel → Settings → Environment Variables.")
 
@@ -295,6 +306,19 @@ def admin(u: User = Depends(me)):
     return u
 
 
+def boss(u: User = Depends(me)):  # admin or manager: may approve
+    if u.role not in ("admin", "manager"):
+        raise HTTPException(403, "Managers and admins only")
+    return u
+
+
+def own_devices(s, u):
+    """None = sees every laptop (admin / manager); otherwise the ids of this staff member's own laptops."""
+    if u.role in ("admin", "manager"):
+        return None
+    return [d.id for d in s.scalars(select(Device).where(Device.user_id == u.id))] or [-1]
+
+
 def page(request, name, u=None, **ctx):
     return tpl.TemplateResponse(request, name, {"me": u, **ctx})
 
@@ -387,8 +411,10 @@ def logout(request: Request):
     return RedirectResponse("/login", status_code=303)
 
 
-def _filtered(s, staff="", typ="", brand="", start="", end="", q=""):
+def _filtered(s, staff="", typ="", brand="", start="", end="", q="", ids=None):
     st = select(ProposalEvent).join(Device).order_by(ProposalEvent.updated_at.desc())
+    if ids is not None:
+        st = st.where(ProposalEvent.device_id.in_(ids))
     if staff:
         st = st.where(Device.staff_name == staff)
     if typ:
@@ -407,20 +433,24 @@ def _filtered(s, staff="", typ="", brand="", start="", end="", q=""):
 @app.get("/", response_class=HTMLResponse)
 def dashboard(request: Request, staff: str = "", typ: str = "", brand: str = "", start: str = "", end: str = "", q: str = "",
               u: User = Depends(me), s=Depends(db)):
-    rows = s.scalars(_filtered(s, staff, typ, brand, start, end, q).limit(500)).all()
+    ids = own_devices(s, u)
+    rows = s.scalars(_filtered(s, staff, typ, brand, start, end, q, ids).limit(500)).all()
     today = now().replace(hour=0, minute=0, second=0, microsecond=0)
     periods = {"Today": today, "Last 7 days": today - dt.timedelta(days=6), "This month": today.replace(day=1)}
     kpis = []
     for label, since in periods.items():
         n, kw = s.execute(select(func.count(ProposalEvent.id), func.coalesce(func.sum(ProposalEvent.max_kw), 0))
-                          .where(ProposalEvent.created_at >= since)).one()
+                          .where(ProposalEvent.created_at >= since)
+                          .where(ProposalEvent.device_id.in_(ids) if ids is not None else True)).one()
         kpis.append((label, n, kw))
     per_staff = s.execute(select(Device.staff_name, func.count(ProposalEvent.id), func.coalesce(func.sum(ProposalEvent.max_kw), 0),
                                  func.coalesce(func.sum(ProposalEvent.max_price), 0), func.max(ProposalEvent.updated_at))
                           .join(ProposalEvent, ProposalEvent.device_id == Device.id, isouter=True)
+                          .where(Device.id.in_(ids) if ids is not None else True)
                           .group_by(Device.staff_name).order_by(Device.staff_name)).all()
-    pending = s.scalar(select(func.count(Approval.id)).where(Approval.status == "Pending"))
-    staff_names = sorted({d.staff_name for d in s.scalars(select(Device))})
+    pending = s.scalar(select(func.count(Approval.id)).where(Approval.status == "Pending")
+                       .where(Approval.device_id.in_(ids) if ids is not None else True))
+    staff_names = sorted({d.staff_name for d in s.scalars(select(Device)) if ids is None or d.id in ids})
     return page(request, "dashboard.html", u, rows=rows, kpis=kpis, per_staff=per_staff, pending=pending,
                 staff_names=staff_names, f=dict(staff=staff, typ=typ, brand=brand, start=start, end=end, q=q))
 
@@ -431,7 +461,7 @@ def export(staff: str = "", typ: str = "", brand: str = "", start: str = "", end
     buf = io.StringIO()
     w = csv.writer(buf)
     w.writerow(["Date", "Staff", "Reference", "Brand", "Customer", "Place", "Capacity", "Types", "Options (type kW price)", "Status", "Within rules"])
-    for e in s.scalars(_filtered(s, staff, typ, brand, start, end, q)):
+    for e in s.scalars(_filtered(s, staff, typ, brand, start, end, q, own_devices(s, u))):
         w.writerow([e.created_at.strftime("%d/%m/%Y %H:%M"), e.device.staff_name, e.ref, e.brand, e.customer, e.place, e.kw_text,
                     e.types, "; ".join(f"{o.get('letter')}: {o.get('type')} {o.get('kw')} kW ₹{_inr(o.get('price'))}" for o in e.options or []),
                     e.status, "yes" if e.within_rules else "no"])
@@ -441,13 +471,15 @@ def export(staff: str = "", typ: str = "", brand: str = "", start: str = "", end
 
 @app.get("/approvals", response_class=HTMLResponse)
 def approvals(request: Request, u: User = Depends(me), s=Depends(db)):
-    pend = s.scalars(select(Approval).where(Approval.status == "Pending").order_by(Approval.created_at)).all()
-    done = s.scalars(select(Approval).where(Approval.status != "Pending").order_by(Approval.decided_at.desc()).limit(100)).all()
+    ids = own_devices(s, u)
+    mine = Approval.device_id.in_(ids) if ids is not None else True
+    pend = s.scalars(select(Approval).where(Approval.status == "Pending").where(mine).order_by(Approval.created_at)).all()
+    done = s.scalars(select(Approval).where(Approval.status != "Pending").where(mine).order_by(Approval.decided_at.desc()).limit(100)).all()
     return page(request, "approvals.html", u, pend=pend, done=done)
 
 
 @app.post("/approvals/{aid}")
-def decide(aid: int, decision: str = Form(...), comment: str = Form(""), u: User = Depends(me), s=Depends(db)):
+def decide(aid: int, decision: str = Form(...), comment: str = Form(""), u: User = Depends(boss), s=Depends(db)):
     a = s.get(Approval, aid)
     if not a or a.status != "Pending" or decision not in ("Approved", "Rejected"):
         raise HTTPException(400)
@@ -456,54 +488,165 @@ def decide(aid: int, decision: str = Form(...), comment: str = Form(""), u: User
     return RedirectResponse("/approvals", status_code=303)
 
 
-@app.get("/devices", response_class=HTMLResponse)
-def devices(request: Request, new_token: str = "", u: User = Depends(admin), s=Depends(db)):
-    return page(request, "devices.html", u, devices=s.scalars(select(Device).order_by(Device.staff_name)).all(),
-                users=s.scalars(select(User).order_by(User.username)).all(), new_token=new_token,
+USERNAME_OK = set("abcdefghijklmnopqrstuvwxyz0123456789._-")
+
+
+def _devices_page(request, u, s, msg="", err="", new_token="", new_staff=""):
+    return page(request, "devices.html", u, msg=msg, err=err, new_token=new_token, new_staff=new_staff,
+                devices=s.scalars(select(Device).order_by(Device.active.desc(), Device.staff_name)).all(),
+                users=s.scalars(select(User).where(User.role.in_(("admin", "manager"))).order_by(User.username)).all(),
                 base=str(request.base_url).rstrip("/"))
+
+
+def _back(msg="", err=""):
+    from urllib.parse import urlencode
+    return RedirectResponse("/devices?" + urlencode({"msg": msg} if msg else {"err": err}), status_code=303)
+
+
+def _new_token(d: Device):
+    token = secrets.token_urlsafe(24)
+    d.token_hash = hashlib.sha256(token.encode()).hexdigest()  # only the hash is kept; the key itself is shown once
+    return token
+
+
+def _link_login(s, d: Device, username: str, password: str):
+    """Give the staff member of laptop d a dashboard login (or rename / change / remove it). Returns an error text or ''."""
+    uname = username.strip().lower()
+    old = d.user
+    only_here = old is not None and old.role == "staff" and not s.scalar(
+        select(Device).where(Device.user_id == old.id, Device.id != (d.id or -1)))
+    if not uname:
+        d.user = None
+        if only_here:
+            old.active = False  # no laptop left: the login stops working
+        return ""
+    if not set(uname) <= USERNAME_OK:
+        return "Login username: letters, numbers, dot, dash or underscore only."
+    x = s.scalar(select(User).where(User.username == uname))
+    if x and x.role != "staff":
+        return f"'{uname}' is a manager/admin login - choose another username for the staff member."
+    if not x and only_here:
+        x = old  # renaming this staff member's login
+        x.username = uname
+    if not x:
+        if len(password) < 8:
+            return "A new staff login needs a password of at least 8 characters."
+        x = User(username=uname, role="staff")
+        s.add(x)
+    if password:
+        if len(password) < 8:
+            return "Password must be at least 8 characters."
+        x.set_password(password)
+    x.name, x.active = d.staff_name, bool(d.active)
+    d.user = x
+    return ""
+
+
+@app.get("/devices", response_class=HTMLResponse)
+def devices(request: Request, msg: str = "", err: str = "", u: User = Depends(admin), s=Depends(db)):
+    return _devices_page(request, u, s, msg=msg, err=err)
 
 
 @app.post("/devices")
-def add_device(request: Request, staff_name: str = Form(...), label: str = Form(""), u: User = Depends(admin), s=Depends(db)):
-    token = secrets.token_urlsafe(24)
-    s.add(Device(staff_name=staff_name.strip(), label=label.strip(), token_hash=hashlib.sha256(token.encode()).hexdigest()))
+def add_device(request: Request, staff_name: str = Form(...), label: str = Form(""), login_username: str = Form(""),
+               login_password: str = Form(""), u: User = Depends(admin), s=Depends(db)):
+    if not staff_name.strip():
+        return _back(err="Enter the staff member's name.")
+    d = Device(staff_name=staff_name.strip(), label=label.strip(), active=True)
+    token = _new_token(d)
+    s.add(d)
+    if (e := _link_login(s, d, login_username, login_password)):
+        s.rollback()
+        return _devices_page(request, u, s, err=e)
     s.commit()
-    # shown once, on this page only; it is never stored in plain text
-    return page(request, "devices.html", u, devices=s.scalars(select(Device).order_by(Device.staff_name)).all(),
-                users=s.scalars(select(User).order_by(User.username)).all(), new_token=token, new_staff=staff_name.strip(),
-                base=str(request.base_url).rstrip("/"))
+    return _devices_page(request, u, s, new_token=token, new_staff=d.staff_name,
+                         msg=f"{d.staff_name} added. Dashboard login: {d.user.username}" if d.user else f"{d.staff_name} added")
+
+
+@app.post("/devices/{did}")
+def edit_device(did: int, staff_name: str = Form(...), label: str = Form(""), login_username: str = Form(""),
+                login_password: str = Form(""), u: User = Depends(admin), s=Depends(db)):
+    d = s.get(Device, did)
+    if not d:
+        raise HTTPException(404)
+    if not staff_name.strip():
+        return _back(err="The staff name cannot be empty.")
+    d.staff_name, d.label = staff_name.strip(), label.strip()
+    if (e := _link_login(s, d, login_username, login_password)):
+        s.rollback()
+        return _back(err=e)
+    s.commit()
+    return _back(msg=f"{d.staff_name} saved")
+
+
+@app.post("/devices/{did}/key")
+def renew_key(request: Request, did: int, u: User = Depends(admin), s=Depends(db)):
+    d = s.get(Device, did)
+    if not d:
+        raise HTTPException(404)
+    token = _new_token(d)
+    s.commit()
+    return _devices_page(request, u, s, new_token=token, new_staff=d.staff_name,
+                         msg=f"New key made for {d.staff_name}. The old key has stopped working.")
 
 
 @app.post("/devices/{did}/toggle")
 def toggle_device(did: int, u: User = Depends(admin), s=Depends(db)):
     d = s.get(Device, did)
+    if not d:
+        raise HTTPException(404)
     d.active = not d.active
+    if d.user and d.user.role == "staff":
+        d.user.active = d.active
     s.commit()
-    return RedirectResponse("/devices", status_code=303)
+    return _back(msg=f"{d.staff_name}: {'enabled' if d.active else 'disabled'}")
 
 
 @app.post("/users")
 def save_user(username: str = Form(...), name: str = Form(""), role: str = Form("manager"), password: str = Form(""),
               active: str = Form(""), u: User = Depends(admin), s=Depends(db)):
     uname = username.strip().lower()
-    x = s.scalar(select(User).where(User.username == uname)) or User(username=uname)
+    if not uname or not set(uname) <= USERNAME_OK:
+        return _back(err="Username: letters, numbers, dot, dash or underscore only.")
+    x = s.scalar(select(User).where(User.username == uname))
+    if x and x.role == "staff":
+        return _back(err=f"'{uname}' is a staff login - change it on that staff member's row under Staff laptops.")
+    x = x or User(username=uname)
     if not x.id and len(password) < 8:
-        raise HTTPException(400, "New users need a password of at least 8 characters")
-    x.name, x.role, x.active = name, role if role in ("admin", "manager") else "manager", bool(active)
+        return _back(err="New users need a password of at least 8 characters.")
+    if password and len(password) < 8:
+        return _back(err="Password must be at least 8 characters.")
+    x.name, x.role, x.active = name.strip(), role if role in ("admin", "manager") else "manager", bool(active)
     if password:
         x.set_password(password)
     if x.id == u.id and (x.role != "admin" or not x.active):
-        raise HTTPException(400, "You cannot remove your own admin access")
+        return _back(err="You cannot remove your own admin access.")
     s.add(x)
     s.commit()
-    return RedirectResponse("/devices", status_code=303)
+    return _back(msg=f"{uname} saved")
+
+
+@app.get("/account", response_class=HTMLResponse)
+def account(request: Request, msg: str = "", err: str = "", u: User = Depends(me), s=Depends(db)):
+    return page(request, "account.html", u, msg=msg, err=err,
+                laptops=s.scalars(select(Device).where(Device.user_id == u.id)).all())
 
 
 @app.post("/account")
-def change_pw(old: str = Form(...), new: str = Form(...), u: User = Depends(me), s=Depends(db)):
+def account_save(name: str = Form(""), old: str = Form(""), new: str = Form(""), new2: str = Form(""),
+                 u: User = Depends(me), s=Depends(db)):
+    from urllib.parse import urlencode
     x = s.get(User, u.id)
-    if not x.check_password(old) or len(new) < 8:
-        raise HTTPException(400, "Current password wrong, or new password shorter than 8 characters")
-    x.set_password(new)
+
+    def back(**kw):
+        return RedirectResponse("/account?" + urlencode(kw), status_code=303)
+    if name.strip() and u.role != "staff":  # a staff member's name is set on their laptop row
+        x.name = name.strip()
+    if new or old:
+        if not x.check_password(old):
+            return back(err="Current password is wrong.")
+        if len(new) < 8 or new != new2:
+            return back(err="New password: at least 8 characters, typed the same twice.")
+        x.set_password(new)
     s.commit()
-    return RedirectResponse("/", status_code=303)
+    return back(msg="Password changed" if new else "Saved")

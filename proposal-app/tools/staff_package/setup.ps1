@@ -1,7 +1,8 @@
 # ARKVOLT Proposals - staff laptop setup window (started by Setup.bat).
 # Checks the laptop, downloads what is missing (Python 3.12, Microsoft Edge), installs the app for this Windows
 # user, adds the desktop icon and opens the app. Safe to run again: proposals on the laptop are kept.
-# Test switches: ARKVOLT_INSTALL_DIR (install elsewhere), ARKVOLT_TEST (no shortcuts/launch), ARKVOLT_AUTORUN (start + close by itself)
+# Test switches: ARKVOLT_INSTALL_DIR (install elsewhere), ARKVOLT_TEST (no shortcuts/launch), ARKVOLT_DEMO (no shortcuts, but
+# "Open" works), ARKVOLT_AUTORUN (start + close by itself)
 Add-Type -AssemblyName System.Windows.Forms, System.Drawing
 [System.Windows.Forms.Application]::EnableVisualStyles()
 
@@ -169,7 +170,7 @@ function Start-Work {
     $btnGo.Enabled = $false; $btnGo.Text = "Installing..."; $status.ForeColor = $NAVY; $status.Text = "Working - please keep this window open."
     $rs = [runspacefactory]::CreateRunspace(); $rs.ApartmentState = "STA"; $rs.Open()
     $script:ps = [powershell]::Create(); $script:ps.Runspace = $rs
-    [void]$script:ps.AddScript($work).AddArgument($sync).AddArgument($Src).AddArgument($Dest).AddArgument($LogFile).AddArgument([bool]$env:ARKVOLT_TEST)
+    [void]$script:ps.AddScript($work).AddArgument($sync).AddArgument($Src).AddArgument($Dest).AddArgument($LogFile).AddArgument([bool]($env:ARKVOLT_TEST -or $env:ARKVOLT_DEMO))
     $script:handle = $script:ps.BeginInvoke()
     $timer.Start()
 }

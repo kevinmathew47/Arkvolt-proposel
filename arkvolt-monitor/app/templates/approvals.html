@@ -2,7 +2,7 @@
 {% block title %}Approvals{% endblock %}
 {% block body %}
 <h1>Approvals</h1>
-<p class="muted">Staff can download proposals up to 5 kW at the fixed rates straight away. Anything else waits here.</p>
+<p class="muted">{% if me.role == 'staff' %}Your requests that need a manager's OK. Once approved, the proposal downloads on your laptop.{% else %}Staff can download proposals up to the staff limit at the fixed rates straight away. Anything else waits here.{% endif %}</p>
 {% for a in pend %}
 <div class="card" style="margin-bottom:12px;border-left:4px solid var(--green)">
   <div class="row" style="justify-content:space-between"><div><b style="font-size:16px">{{ a.customer or 'Customer' }}</b> · {{ a.kw_text }} <span class="small muted">by <b>{{ a.device.staff_name }}</b> · {{ a.created_at|dt }}</span></div></div>
@@ -10,10 +10,12 @@
   <table class="t" style="margin-bottom:8px"><thead><tr><th>Option</th><th>Type</th><th class="r">kW</th><th class="r">Price ₹</th><th class="r">Standard ₹</th></tr></thead>
   {% for o in a.options %}<tr><td>{{ o.letter }}</td><td><span class="badge t-{{ o.type }}">{{ o.type|typ }}</span></td><td class="r">{{ '%g'|format(o.kw or 0) }}</td><td class="r"><b>{{ o.price|inr }}</b></td><td class="r">{{ o.package_price|inr if o.package_price else '—' }}</td></tr>{% endfor %}</table>
   {% if a.note %}<div class="small"><b>Staff note:</b> {{ a.note }}</div>{% endif %}
+  {% if me.role != 'staff' %}
   <form method="post" action="/approvals/{{ a.id }}" class="row" style="margin-top:10px">
     <div style="flex:1;min-width:220px"><label>Comment to staff (optional)</label><input name="comment"></div>
     <button class="btn g" name="decision" value="Approved">✓ Approve</button><button class="btn r" name="decision" value="Rejected">✕ Reject</button>
   </form>
+  {% else %}<div class="small amb" style="margin-top:8px">Waiting for a manager or admin.</div>{% endif %}
 </div>
 {% else %}<div class="msg">Nothing waiting for approval.</div>{% endfor %}
 <h2 style="margin-top:22px">Recent decisions</h2>

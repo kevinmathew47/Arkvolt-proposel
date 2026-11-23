@@ -7,6 +7,7 @@
   <a href="/admin?tab={{ k }}" class="{{ 'on' if tab == k }}">{{ l }}</a>{% endfor %}
 </div>
 {% if msg %}<div class="msg">{{ msg }}</div>{% endif %}
+{% if err %}<div class="err" style="margin-bottom:14px">{{ err }}</div>{% endif %}
 
 {% if tab == 'company' %}
 <div class="grid g2">
@@ -93,21 +94,32 @@
   <td><input type="number" name="last" value="0" min="0" style="width:120px"></td><td><button class="btn sm">Set</button></td></form></tr></table></div>
 
 {% elif tab == 'settings' %}
-<form class="card" method="post" action="/admin/settings" style="max-width:640px;margin-bottom:14px">
-  <h2>Monitoring &amp; staff rules</h2>
-  <p class="small muted">Links this laptop to the online ARKVOLT proposal monitor. Every proposal is reported there; staff quotes above the limit or at a non-standard price need online approval.</p>
-  <label>Monitor address</label><input name="monitor_url" value="{{ settings.get('monitor_url', '') }}" placeholder="https://arkvolt-monitor.vercel.app">
-  <label style="margin-top:10px">Device key (from the monitor's Staff &amp; devices page)</label><input name="monitor_key" type="password" value="{{ settings.get('monitor_key', '') }}" autocomplete="off">
-  <label style="margin-top:10px">Staff limit without approval (kW)</label><input name="staff_max_kw" value="{{ settings.get('staff_max_kw', '5') }}" style="max-width:120px">
-  <button class="btn g" style="margin-top:10px">Save</button>
-</form>
-<form method="post" action="/admin/monitor/test" style="margin:-6px 0 18px"><button class="btn o sm">Test connection</button></form>
-<form class="card" method="post" action="/admin/settings" style="max-width:640px">
-  <label>Maximum discount without approval (% below package price)</label><input name="max_discount_pct" value="{{ settings.get('max_discount_pct', '5') }}">
-  <label style="margin-top:10px">Price per kW for custom sizes (JSON) — keys "BRAND|type|module" or "BRAND|type", e.g. {"ADROIT|ongrid|STC550": 62000, "ARKVOLT|hybrid": 85000}. Blank = use the per-kW price of the nearest standard package.</label>
-  <textarea name="rate_per_kw" rows="4">{{ settings.get('rate_per_kw', '{}') }}</textarea>
-  <label style="margin-top:10px">Project timeline (JSON list of [duration, step])</label><textarea name="timeline" rows="6">{{ settings.get('timeline', '[]') }}</textarea>
-  <button class="btn g" style="margin-top:10px">Save settings</button></form>
+<div class="grid g2" style="align-items:start;margin-bottom:14px">
+  {% with next_url = '/admin?tab=settings' %}{% include "_monitor_card.html" %}{% endwith %}
+  <form class="card" method="post" action="/admin/settings">
+    <h2>Staff rules</h2>
+    <p class="small muted" style="margin-top:-6px">Staff can download straight away only inside these limits. Anything else is sent to the dashboard for approval.</p>
+    <label>Largest plant staff may quote without approval (kW)</label>
+    <input name="staff_max_kw" value="{{ settings.get('staff_max_kw', '5') }}" style="max-width:140px;display:block">
+    <label style="margin-top:12px">Maximum discount without approval (% below the package price)</label>
+    <input name="max_discount_pct" value="{{ settings.get('max_discount_pct', '5') }}" style="max-width:140px;display:block">
+    <button class="btn g" style="margin-top:14px">Save staff rules</button>
+  </form>
+</div>
+<div class="grid g2" style="align-items:start">
+  <form class="card" method="post" action="/admin/settings">
+    <h2>Price per kW for custom sizes</h2>
+    <p class="small muted" style="margin-top:-6px">Used when a proposal is not one of the standard packages. Keys are "BRAND|type|module" or "BRAND|type", e.g. {"ADROIT|ongrid|STC550": 62000, "ARKVOLT|hybrid": 85000}. Leave {} to use the per-kW price of the nearest standard package.</p>
+    <textarea name="rate_per_kw" rows="6">{{ settings.get('rate_per_kw', '{}') }}</textarea>
+    <button class="btn g" style="margin-top:12px">Save prices</button>
+  </form>
+  <form class="card" method="post" action="/admin/settings">
+    <h2>Project timeline</h2>
+    <p class="small muted" style="margin-top:-6px">Shown in the proposal. A JSON list of [duration, step].</p>
+    <textarea name="timeline" rows="6">{{ settings.get('timeline', '[]') }}</textarea>
+    <button class="btn g" style="margin-top:12px">Save timeline</button>
+  </form>
+</div>
 
 {% elif tab == 'audit' %}
 <div class="card" style="padding:0"><table class="t"><thead><tr><th>When</th><th>User</th><th>Action</th><th>Detail</th></tr></thead>

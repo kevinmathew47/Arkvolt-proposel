@@ -2,31 +2,73 @@
 {% block title %}Staff &amp; devices{% endblock %}
 {% block body %}
 <h1>Staff &amp; devices</h1>
+{% if msg %}<div class="msg">{{ msg }}</div>{% endif %}
+{% if err %}<div class="err" style="margin-bottom:14px">{{ err }}</div>{% endif %}
+
 {% if new_token %}
-<div class="warnbox" style="margin-bottom:14px">
-  <b>Device key for {{ new_staff or 'the new device' }} — copy it now, it is shown only once:</b>
-  <div style="font-family:ui-monospace,Consolas,monospace;font-size:15px;background:#fff;padding:8px 10px;border-radius:6px;margin:8px 0;word-break:break-all">{{ new_token }}</div>
-  On the staff laptop, in the proposal app go to <b>Admin → Settings → Monitoring</b> and enter<br>
-  Monitor address: <b>{{ base }}</b> &nbsp; Device key: <i>the key above</i>
-</div>{% endif %}
-<div class="card" style="padding:0;overflow-x:auto;margin-bottom:14px">
-<table class="t"><thead><tr><th>Staff</th><th>Laptop</th><th>Added</th><th>Last seen</th><th>Status</th><th></th></tr></thead>
-{% for d in devices %}<tr><td><b>{{ d.staff_name }}</b></td><td>{{ d.label }}</td><td class="small">{{ d.created_at|dt }}</td><td class="small">{{ d.last_seen|dt }}</td>
-  <td>{% if d.active %}<span class="badge s-Won">Active</span>{% else %}<span class="badge s-Lost">Disabled</span>{% endif %}</td>
-  <td class="r"><form method="post" action="/devices/{{ d.id }}/toggle"><button class="btn o sm">{{ 'Disable' if d.active else 'Enable' }}</button></form></td></tr>
-{% else %}<tr><td colspan="6" class="muted" style="padding:20px;text-align:center">No devices yet.</td></tr>{% endfor %}
-</table></div>
-<form class="card row" method="post" action="/devices" style="margin-bottom:22px">
-  <div style="flex:1;min-width:180px"><label>Staff name</label><input name="staff_name" required placeholder="e.g. Ebinraj B"></div>
-  <div style="flex:1;min-width:180px"><label>Laptop (optional)</label><input name="label" placeholder="e.g. Dell Vostro – sales"></div>
-  <button class="btn g">+ Add device &amp; create key</button>
-</form>
-<h2>Dashboard users</h2>
-<div class="card" style="padding:0"><table class="t"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>New password</th><th>Active</th><th></th></tr></thead>
-{% for x in users %}<tr><form method="post" action="/users"><td><input type="hidden" name="username" value="{{ x.username }}"><b>{{ x.username }}</b></td>
-  <td><input name="name" value="{{ x.name }}"></td><td><select name="role">{% for r in ['manager','admin'] %}<option {{ 'selected' if x.role == r }}>{{ r }}</option>{% endfor %}</select></td>
-  <td><input name="password" type="password" placeholder="leave blank to keep" autocomplete="new-password"></td><td><input type="checkbox" name="active" {{ 'checked' if x.active }}></td><td><button class="btn g sm">Save</button></td></form></tr>{% endfor %}
-<tr><form method="post" action="/users"><td><input name="username" placeholder="new username" required></td><td><input name="name"></td><td><select name="role"><option>manager</option><option>admin</option></select></td>
-  <td><input name="password" type="password" placeholder="8+ characters" required autocomplete="new-password"></td><td><input type="checkbox" name="active" checked></td><td><button class="btn sm">Add</button></td></form></tr></table></div>
-<p class="small muted">Managers can view everything and approve; admins also manage devices and users.</p>
+<div class="keybox">
+  <div class="kb-h">Device key for <b>{{ new_staff or 'the new laptop' }}</b>: copy it now. It is shown only this once.</div>
+  <div class="kb-row"><code id="newkey">{{ new_token }}</code>
+    <button type="button" class="btn g sm" onclick="navigator.clipboard.writeText(document.getElementById('newkey').textContent);this.textContent='✓ Copied'">Copy key</button></div>
+  <ol class="small">
+    <li>On the staff laptop open <b>ARKVOLT Proposals</b> and click <b>Account</b> (top right).</li>
+    <li>Under <b>Online dashboard</b> paste the key and click <b>Save &amp; test</b>.</li>
+    <li>Dashboard address (already filled in): <b>{{ base }}</b></li>
+  </ol>
+  <div class="small muted">Lost it? Click <b>New key</b> on the laptop's row below at any time. The old key then stops working.</div>
+</div>
+{% endif %}
+
+<section class="sec">
+  <div class="sec-h"><div><h2>Staff laptops</h2>
+    <p class="small muted">One row per laptop. <b>Device key</b> links the laptop to this dashboard. <b>Dashboard login</b> (optional) lets the staff member sign in here to see only their own proposals and approvals.</p></div></div>
+  <div class="card" style="padding:0;overflow-x:auto">
+  <table class="t"><thead><tr><th>Staff</th><th>Laptop</th><th>Dashboard login</th><th>Last seen</th><th>Status</th><th class="r">Actions</th></tr></thead>
+  {% for d in devices %}<tbody class="dev">
+  <tr>
+    <td><b>{{ d.staff_name }}</b></td><td>{{ d.label or '—' }}</td>
+    <td>{% if d.user %}<span class="mono">{{ d.user.username }}</span>{% else %}<span class="muted small">none</span>{% endif %}</td>
+    <td class="small">{{ d.last_seen|dt }}</td>
+    <td>{% if d.active %}<span class="badge s-Won">Active</span>{% else %}<span class="badge s-Lost">Disabled</span>{% endif %}</td>
+    <td class="r nowrap">
+      <button type="button" class="btn o sm" onclick="this.closest('tbody').classList.toggle('open')">Edit</button>
+      <form method="post" action="/devices/{{ d.id }}/key" style="display:inline" onsubmit="return confirm('Make a new key for {{ d.staff_name }}? The current key stops working until the new one is entered on the laptop.')"><button class="btn o sm">New key</button></form>
+      <form method="post" action="/devices/{{ d.id }}/toggle" style="display:inline"><button class="btn o sm">{{ 'Disable' if d.active else 'Enable' }}</button></form>
+    </td></tr>
+  <tr class="edit"><td colspan="6">
+    <form method="post" action="/devices/{{ d.id }}" class="grid g4" autocomplete="off">
+      <div><label>Staff name</label><input name="staff_name" value="{{ d.staff_name }}" required></div>
+      <div><label>Laptop</label><input name="label" value="{{ d.label }}"></div>
+      <div><label>Dashboard login username</label><input name="login_username" value="{{ d.user.username if d.user else '' }}" placeholder="blank = no login"></div>
+      <div><label>{{ 'New password' if d.user else 'Password' }}</label><input name="login_password" type="password" placeholder="{{ 'leave blank to keep' if d.user else '8+ characters' }}" autocomplete="new-password"></div>
+      <div class="span4 row" style="justify-content:flex-end"><button class="btn g sm">Save {{ d.staff_name }}</button></div>
+    </form></td></tr>
+  </tbody>
+  {% else %}<tbody><tr><td colspan="6" class="muted" style="padding:20px;text-align:center">No laptops yet. Add the first one below.</td></tr></tbody>{% endfor %}
+  </table></div>
+
+  <form class="card" method="post" action="/devices" autocomplete="off" style="margin-top:12px">
+    <h3>+ Add a staff laptop</h3>
+    <div class="grid g4">
+      <div><label>Staff name *</label><input name="staff_name" required placeholder="e.g. Ebinraj B"></div>
+      <div><label>Laptop</label><input name="label" placeholder="e.g. Dell Vostro, sales"></div>
+      <div><label>Dashboard login username</label><input name="login_username" placeholder="optional, e.g. ebinraj"></div>
+      <div><label>Dashboard password</label><input name="login_password" type="password" placeholder="8+ characters" autocomplete="new-password"></div>
+    </div>
+    <div class="row" style="justify-content:space-between;margin-top:12px">
+      <span class="small muted">A device key is created and shown once. Leave the login blank if the staff member doesn't need the dashboard.</span>
+      <button class="btn g">Add laptop &amp; create key</button></div>
+  </form>
+</section>
+
+<section class="sec">
+  <div class="sec-h"><div><h2>Managers &amp; admins</h2>
+    <p class="small muted">See every staff member's proposals and approve requests. Admins also manage this page.</p></div></div>
+  <div class="card" style="padding:0;overflow-x:auto"><table class="t"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>New password</th><th>Active</th><th></th></tr></thead>
+  {% for x in users %}<tr><form method="post" action="/users" autocomplete="off"><td><input type="hidden" name="username" value="{{ x.username }}"><b class="mono">{{ x.username }}</b></td>
+    <td><input name="name" value="{{ x.name }}"></td><td><select name="role">{% for r in ['manager','admin'] %}<option {{ 'selected' if x.role == r }}>{{ r }}</option>{% endfor %}</select></td>
+    <td><input name="password" type="password" placeholder="leave blank to keep" autocomplete="new-password"></td><td><input type="checkbox" name="active" {{ 'checked' if x.active }}></td><td class="r"><button class="btn g sm">Save</button></td></form></tr>{% endfor %}
+  <tr class="addrow"><form method="post" action="/users" autocomplete="off"><td><input name="username" placeholder="new username" required></td><td><input name="name" placeholder="Full name"></td><td><select name="role"><option>manager</option><option>admin</option></select></td>
+    <td><input name="password" type="password" placeholder="8+ characters" required autocomplete="new-password"></td><td><input type="checkbox" name="active" checked></td><td class="r"><button class="btn sm">+ Add</button></td></form></tr></table></div>
+</section>
 {% endblock %}

@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Account{% endblock %}
+{% block body %}
+<h1>My account</h1>
+{% if msg %}<div class="msg">{{ msg }}</div>{% endif %}
+{% if err %}<div class="err" style="margin-bottom:14px">{{ err }}</div>{% endif %}
+<div class="grid g2" style="max-width:900px;align-items:start">
+  <form class="card" method="post" action="/account">
+    <h2>Profile</h2>
+    <label>Username</label><input value="{{ me.username }}" disabled>
+    <label style="margin-top:10px">Name</label>
+    <input name="name" value="{{ me.name }}" {{ 'disabled' if me.role == 'staff' }}>
+    <div class="small muted" style="margin-top:6px">Role: <b>{{ me.role }}</b>{% if me.role == 'staff' %} · your name and username are set by the admin{% endif %}</div>
+    {% if me.role == 'staff' %}
+    <h3 style="margin-top:14px">My laptops</h3>
+    {% for d in laptops %}<div class="small">{{ d.label or 'Laptop' }} · last seen {{ d.last_seen|dt }}</div>{% else %}<div class="small muted">None linked.</div>{% endfor %}
+    {% else %}<button class="btn g" style="margin-top:14px">Save</button>{% endif %}
+  </form>
+  <form class="card" method="post" action="/account">
+    <h2>Change password</h2>
+    <label>Current password</label><input type="password" name="old" required autocomplete="current-password">
+    <label style="margin-top:10px">New password (8+ characters)</label><input type="password" name="new" required minlength="8" autocomplete="new-password">
+    <label style="margin-top:10px">New password again</label><input type="password" name="new2" required minlength="8" autocomplete="new-password">
+    <button class="btn g" style="margin-top:14px">Change password</button>
+  </form>
+</div>
+{% endblock %}

@@ -2,7 +2,7 @@
 {% block title %}Proposals{% endblock %}
 {% block body %}
 <div class="row" style="justify-content:space-between;align-items:center">
-  <h1>Staff proposals</h1>
+  <h1>{{ 'My proposals' if me.role == 'staff' else 'Staff proposals' }}</h1>
   {% if pending %}<a class="btn g" href="/approvals">{{ pending }} waiting for approval →</a>{% endif %}
 </div>
 <div class="grid g3" style="margin-bottom:14px">
@@ -11,7 +11,7 @@
 <div class="card" style="padding:0;overflow-x:auto;margin-bottom:14px">
 <table class="t"><thead><tr><th>Staff</th><th class="r">Proposals</th><th class="r">kW quoted</th><th class="r">Value quoted ₹</th><th>Last activity</th></tr></thead>
 {% for name, n, kw, val, last in per_staff %}<tr><td><a href="/?staff={{ name|urlencode }}"><b>{{ name }}</b></a></td><td class="r">{{ n }}</td><td class="r">{{ '%g'|format(kw) }}</td><td class="r">{{ val|inr }}</td><td class="small">{{ last|dt }}</td></tr>
-{% else %}<tr><td colspan="5" class="muted" style="padding:20px;text-align:center">No staff devices yet — add them under <b>Staff &amp; devices</b>.</td></tr>{% endfor %}
+{% else %}<tr><td colspan="5" class="muted" style="padding:20px;text-align:center">{% if me.role == 'staff' %}No laptop is linked to your login yet. Ask the admin.{% else %}No staff devices yet. Add them under <b>Staff &amp; devices</b>.{% endif %}</td></tr>{% endfor %}
 </table></div>
 <form class="card row" method="get" style="margin-bottom:14px">
   <div style="flex:2;min-width:180px"><label>Search</label><input name="q" value="{{ f.q }}" placeholder="Customer or reference"></div>

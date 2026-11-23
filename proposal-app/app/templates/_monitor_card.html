@@ -1,0 +1,18 @@
+<form class="card" method="post" action="/account/monitor" autocomplete="off">
+  <input type="hidden" name="next" value="{{ next_url }}">
+  <h2>Online dashboard</h2>
+  <p class="small muted" style="margin-top:-6px">Every proposal made here is reported to the ARKVOLT dashboard, and approvals come from there.</p>
+  <div class="status-list">
+    <div><span>Address</span><b>{{ mon.url or 'not set' }}</b></div>
+    <div><span>Device key</span>{% if mon.key_set %}<b class="ok">✓ saved</b>{% else %}<b class="bad">not entered yet</b>{% endif %}</div>
+    <div><span>Waiting to send</span><b>{{ mon.waiting }} report{{ '' if mon.waiting == 1 else 's' }}</b></div>
+  </div>
+  {% if me.role == 'admin' %}
+  <label style="margin-top:12px">Dashboard address</label>
+  <input name="monitor_url" value="{{ mon.url }}" placeholder="https://arkvolt-proposel.vercel.app">
+  {% endif %}
+  <label style="margin-top:12px">{{ 'Replace device key' if mon.key_set else 'Device key' }}</label>
+  <input name="monitor_key" type="password" placeholder="{{ 'leave blank to keep the saved key' if mon.key_set else 'paste the key from the dashboard' }}" autocomplete="off">
+  <div class="small muted" style="margin-top:4px">Get it on the dashboard: <b>Staff &amp; devices</b> → this laptop's row → <b>New key</b>.</div>
+  <button class="btn g" style="margin-top:14px">Save &amp; test connection</button>
+</form>

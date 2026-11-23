@@ -12,7 +12,10 @@ ARKVOLT Proposals - staff laptop setup
 3. Click "Open ARKVOLT Proposals". The browser shows "Set up this laptop" -
    the owner/manager fills it in once: staff name, username and password, the admin
    password, and the device key from the online dashboard
-   (https://arkvolt-proposel.vercel.app -> Staff & devices -> + Add device).
+   (https://arkvolt-proposel.vercel.app -> Staff & devices -> + Add a staff laptop).
+   The key can also be left blank and entered later on the Account page.
+   Lost key? On the dashboard click "New key" on that laptop's row and paste it
+   in the app: Account -> Online dashboard -> Save & test connection.
 4. Done. From then on: double-click "ARKVOLT Proposals" on the desktop.
    (No black window - a small ARKVOLT screen appears, then the browser opens.)
 
