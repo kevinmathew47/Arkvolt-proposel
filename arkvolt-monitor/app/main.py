@@ -187,8 +187,8 @@ app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="stati
 
 
 class _VercelEntryPath:
-    """Vercel routes every request through /api/index (vercel.json); if that internal path ever reaches us,
-    serve the page it stands for instead of a 404."""
+    """vercel.json sends every request to /api/index?__vpath=<page asked for>, because Vercel hands the
+    function the rewritten path. Put the real page back (and drop __vpath from the query) before routing."""
 
     def __init__(self, inner):
         self.inner = inner
@@ -197,7 +197,12 @@ class _VercelEntryPath:
         if scope.get("type") == "http":
             p = scope.get("path", "")
             if p == "/api/index" or p.startswith("/api/index/"):
-                scope = dict(scope, path=p[len("/api/index"):] or "/", raw_path=(p[len("/api/index"):] or "/").encode())
+                from urllib.parse import parse_qsl, unquote, urlencode
+                pairs = parse_qsl(scope.get("query_string", b"").decode("latin-1"), keep_blank_values=True)
+                vpath = next((v for k, v in pairs if k == "__vpath"), None)
+                real = "/" + unquote(vpath).lstrip("/") if vpath is not None else (p[len("/api/index"):] or "/")
+                rest = urlencode([(k, v) for k, v in pairs if k != "__vpath"]).encode("latin-1")
+                scope = dict(scope, path=real, raw_path=real.encode(), query_string=rest)
         await self.inner(scope, receive, send)
 
 
