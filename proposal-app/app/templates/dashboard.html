@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Proposals{% endblock %}
+{% block body %}
+<div class="row" style="justify-content:space-between;align-items:center">
+  <h1>Proposals</h1><a class="btn g" href="/new">+ New proposal</a>
+</div>
+{% if pending %}<div class="warnbox" style="margin-bottom:14px"><b>Waiting for your approval:</b>
+  {% for v in pending %}<a href="/p/{{ v.proposal_id }}">{{ v.proposal.customer_name or ('#' ~ v.proposal_id) }}</a>{{ ", " if not loop.last }}{% endfor %}</div>{% endif %}
+<form class="card row" method="get" style="margin-bottom:14px">
+  <div style="flex:2;min-width:200px"><label>Search</label><input name="q" value="{{ q }}" placeholder="Customer, reference or consumer no."></div>
+  <div style="flex:1;min-width:140px"><label>Brand</label><select name="brand"><option value="">All</option>{% for b in ['ADROIT','ARKVOLT'] %}<option {{ 'selected' if brand == b }}>{{ b }}</option>{% endfor %}</select></div>
+  <div style="flex:1;min-width:140px"><label>Status</label><select name="status"><option value="">All</option>{% for x in ['Draft','Generated','Sent','Won','Lost'] %}<option {{ 'selected' if status == x }}>{{ x }}</option>{% endfor %}</select></div>
+  <button class="btn">Filter</button>
+</form>
+<div class="card" style="padding:0;overflow-x:auto">
+<table class="t">
+  <thead><tr><th>Customer</th><th>Brand</th><th>System</th><th>Reference</th><th>Status</th><th>By</th><th>Updated</th><th></th></tr></thead>
+  {% for p in rows %}{% set v = p.versions[-1] if p.versions else None %}
+  <tr><td><a href="/p/{{ p.id }}"><b>{{ p.customer_name or '—' }}</b></a><div class="small muted">{{ p.consumer_no }}</div></td>
+    <td>{% if p.brand %}<span class="badge b-{{ p.brand }}">{{ p.brand }}</span>{% endif %}</td>
+    <td>{{ p.summary }}</td><td class="small">{{ p.ref_base or '—' }}</td>
+    <td><span class="badge s-{{ p.status }}">{{ p.status }}</span>{% if v and v.needs_approval and not v.approved_by %} <span class="badge s-Sent">Needs approval</span>{% endif %}</td>
+    <td class="small">{{ p.owner.name or p.owner.username }}</td><td class="small">{{ p.updated_at.strftime('%d/%m/%Y %H:%M') }}</td>
+    <td class="r"><a class="btn o sm" href="/p/{{ p.id }}/edit">Open</a></td></tr>
+  {% else %}<tr><td colspan="8" class="muted" style="padding:28px;text-align:center">No proposals yet — click <b>+ New proposal</b>.</td></tr>{% endfor %}
+</table></div>
+{% endblock %}

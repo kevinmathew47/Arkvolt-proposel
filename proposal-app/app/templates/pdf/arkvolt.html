@@ -1,0 +1,255 @@
+{#- ARKVOLT Energy commercial proposal (spec §4.2, §9.2): navy #0A1527, green #80C200, Plus Jakarta Sans,
+    section label in spaced capitals, footer "ARKVOLT · {title} · Ref" left and "NN / TOTAL" right. -#}
+<!doctype html>
+<html><head><meta charset="utf-8"><title>{{ out.file_name }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=block" rel="stylesheet">
+<style>
+@page { size: 595.5pt 842.25pt; margin: 0 }
+* { box-sizing: border-box; margin: 0; padding: 0 }
+:root { --navy: #0A1527; --green: #80C200; --gd: #5F9800; --muted: #5B6B80; --line: #E3E8EF; --mint: #EEF5E3 }
+body { font-family: 'Plus Jakarta Sans', sans-serif; color: var(--navy); -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 9.2pt; line-height: 1.5 }
+.page { width: 595.5pt; height: 842.25pt; position: relative; overflow: hidden; page-break-after: always; break-after: page; background: #fff }
+.page:before { content: ""; position: absolute; left: 0; right: 0; top: 0; height: 4pt; background: var(--green) }
+.logo { position: absolute; right: 42pt; top: 22pt; width: 92pt }
+.lab { position: absolute; left: 42pt; top: 30pt; font-size: 6.6pt; font-weight: 800; letter-spacing: 2.4pt; color: var(--gd) }
+.lab i { display: inline-block; width: 5pt; height: 5pt; background: var(--green); margin-right: 6pt; vertical-align: 1pt }
+h1.t { position: absolute; left: 42pt; top: 42pt; font-size: 19pt; font-weight: 800; letter-spacing: -.3pt; line-height: 1.25 }
+.rule { position: absolute; left: 42pt; right: 42pt; top: 72pt; height: .8pt; background: var(--line) }
+.body { position: absolute; left: 42pt; right: 42pt; top: 86pt; bottom: 48pt }
+.foot { position: absolute; left: 42pt; right: 42pt; bottom: 20pt; display: flex; justify-content: space-between; font-size: 6.6pt; color: var(--muted); border-top: .6pt solid var(--line); padding-top: 6pt }
+h2 { font-size: 11pt; font-weight: 800; margin: 12pt 0 6pt }
+h3 { font-size: 9.4pt; font-weight: 800; margin: 0 0 4pt }
+p { margin-bottom: 7pt }
+.muted { color: var(--muted) } .small { font-size: 7.6pt; line-height: 1.45 }
+table { width: 100%; border-collapse: collapse; font-size: 7.9pt; line-height: 1.35 }
+th, td { padding: 4pt 5pt; text-align: left; vertical-align: top; border-bottom: .6pt solid var(--line) }
+thead th { background: var(--navy); color: #fff; font-weight: 700; font-size: 7.4pt; border: 0 }
+thead th.hl { background: var(--green); color: var(--navy) }
+td.r, th.r { text-align: right }
+tr.hl td { background: #FFF6DC } tr.tot td { background: var(--navy); color: #fff; font-weight: 800 }
+tr.strong td { font-weight: 800; background: var(--mint) }
+.neg { color: #D64545 } .pos { color: var(--gd) }
+.stats { display: grid; gap: 8pt }
+.stat { border-top: 2.5pt solid var(--green); background: #F7F9FB; padding: 8pt 10pt }
+.stat small { display: block; font-size: 6.4pt; font-weight: 800; letter-spacing: 1.2pt; color: var(--gd); text-transform: uppercase }
+.stat b { display: block; font-size: 16pt; font-weight: 800; line-height: 1.25 }
+.stat span { font-size: 7pt; color: var(--muted) }
+.box { border: .8pt solid var(--line); border-radius: 4pt; padding: 9pt 11pt }
+.box.g { border-color: var(--green); background: #F6FBEC }
+.box.d { background: var(--navy); color: #fff; border: 0 }
+.tag { display: inline-block; font-size: 6.2pt; font-weight: 800; letter-spacing: 1.2pt; background: var(--green); color: var(--navy); padding: 1.5pt 6pt; border-radius: 2pt; margin-bottom: 4pt }
+.bullets { list-style: none } .bullets li { position: relative; padding-left: 12pt; margin-bottom: 5pt; font-size: 8.2pt; line-height: 1.45 }
+.bullets li:before { content: ""; position: absolute; left: 0; top: 4pt; width: 5pt; height: 5pt; background: var(--green) }
+.flow { display: flex; align-items: center; gap: 6pt; margin: 4pt 0 10pt }
+.flow div { flex: 1; border: .8pt solid var(--navy); padding: 6pt; text-align: center; font-size: 7.6pt; font-weight: 700 }
+.flow div span { display: block; font-weight: 400; font-size: 6.6pt; color: var(--muted) }
+.flow i { font-style: normal; color: var(--green); font-weight: 800 }
+.bar { height: 7pt; background: var(--line); position: relative } .bar b { position: absolute; left: 0; top: 0; bottom: 0; background: var(--green) }
+.warn { color: #B26B00; font-size: 7pt }
+.sig { display: grid; grid-template-columns: 1fr 1fr; gap: 40pt; margin-top: 22pt; font-size: 8pt }
+.sig div { border-top: .8pt solid #8A9AAA; padding-top: 4pt }
+</style></head>
+<body>
+{%- set co = out.company -%}
+{%- set opts = out.options -%}
+{%- set total = 11 -%}
+{%- set ns = namespace(p=1) -%}
+{%- macro head(n, label, title) -%}
+{%- set ns.p = ns.p + 1 -%}
+<img class="logo" src="{{ asset }}/logo-primary.svg"><div class="lab"><i></i>{{ "%02d"|format(n) }} · {{ label|upper }}</div><h1 class="t">{{ title }}</h1><div class="rule"></div>
+<div class="foot"><span>ARKVOLT · {{ out.kw_text }} Commercial Solar Proposal · {{ (out.texts.to_lines[0] if out.texts.to_lines else "") }} · Ref: {{ ref }}</span><span>{{ "%02d"|format(ns.p) }} / {{ "%02d"|format(total) }}</span></div>
+{%- endmacro -%}
+{%- set b = bill -%}
+
+{# ============================== COVER ============================== #}
+<section class="page" style="background:linear-gradient(90deg,#0A1527 0 38%,#fff 38%)">
+  <svg class="abs" style="position:absolute;left:0;top:0;width:226pt;height:842pt" viewBox="0 0 226 842">
+    {% for r in [60, 95, 130, 165, 200, 235] %}<circle cx="40" cy="610" r="{{ r }}" fill="none" stroke="#80C200" stroke-opacity="{{ 0.5 - loop.index0 * 0.07 }}" stroke-width=".8"/>{% endfor %}
+    <rect x="0" y="0" width="226" height="4" fill="#80C200"/>
+  </svg>
+  <img src="{{ asset }}/logo-reversed.svg" style="position:absolute;left:28pt;top:44pt;width:170pt">
+  <div style="position:absolute;left:28pt;bottom:40pt;width:175pt;color:#B9C6D6;font-size:7pt;letter-spacing:1.6pt;font-weight:700">SOLAR · STORAGE · SMART ENERGY MANAGEMENT</div>
+  <div style="position:absolute;left:262pt;right:42pt;top:120pt">
+    <div class="small muted"><b style="color:#0A1527">Date:</b> {{ date }} &nbsp; <b style="color:#0A1527">Ref:</b> {{ ref }}</div>
+    <div style="margin-top:28pt" class="lab" ><i></i>COMMERCIAL SOLAR PROPOSAL</div>
+  </div>
+  <div style="position:absolute;left:262pt;right:42pt;top:190pt">
+    <div style="font-size:44pt;font-weight:800;color:#5F9800;line-height:1.05">{{ out.kw_text }}</div>
+    <div style="font-size:24pt;font-weight:800;line-height:1.15;margin-top:6pt">{{ out.texts.title }}</div>
+    <div style="height:3pt;width:56pt;background:#80C200;margin:12pt 0"></div>
+    <div class="muted" style="font-size:9.4pt">{% for l in out.texts.subtitle %}{{ l }}{{ " " if not loop.last }}{% endfor %} · {{ out.tariff_name }}</div>
+    <div style="margin-top:46pt;font-size:8pt;font-weight:800;letter-spacing:1.4pt;color:#5F9800">PREPARED FOR</div>
+    <div style="margin-top:4pt;font-size:9.4pt;line-height:1.55">{% if out.texts.to_lines %}<b>{{ out.texts.to_lines[0] }}</b><br>{% for l in out.texts.to_lines[1:] %}{{ l }}<br>{% endfor %}{% else %}<div style="border-bottom:.8pt solid #8A9AAA;height:20pt"></div><div style="border-bottom:.8pt solid #8A9AAA;height:20pt"></div>{% endif %}
+      {% if b.consumer_no %}<span class="muted">KSEB consumer no. {{ b.consumer_no }}</span>{% endif %}</div>
+    <div style="margin-top:28pt;font-size:8pt;font-weight:800;letter-spacing:1.4pt;color:#5F9800">PREPARED BY</div>
+    <div style="margin-top:4pt;font-size:9pt;line-height:1.55"><b>{{ co.legal_name|upper }}</b><br>{{ co.address }}<br>{{ co.phone }} · {{ co.email }}</div>
+  </div>
+</section>
+
+{# ============================== 01 INTRODUCTION ============================== #}
+<section class="page">
+  {{ head(1, "Introduction", "Welcome") }}
+  <div class="body" style="font-size:9.4pt">
+    <div style="display:flex;justify-content:space-between"><span><b>Ref:</b> {{ ref }}</span><span><b>Date:</b> {{ date }}</span></div>
+    <div style="margin-top:12pt">To,</div>
+    <div style="margin:3pt 0 12pt">{% if out.texts.to_lines %}{% for l in out.texts.to_lines %}{{ l }}<br>{% endfor %}{% else %}<div style="border-bottom:.8pt solid #8A9AAA;height:20pt;width:220pt"></div><div style="border-bottom:.8pt solid #8A9AAA;height:20pt;width:220pt"></div>{% endif %}</div>
+    <p style="font-weight:800">Sub: {{ out.texts.subject }}</p>
+    <p>Dear Sir / Madam,</p><p>{{ out.texts.p1 }}</p><p>{{ out.texts.p2 }}</p>
+    <div class="stats" style="grid-template-columns:repeat({{ out.texts.cards|length }},1fr);margin:12pt 0">
+      {% for ic, h, t in out.texts.cards %}<div class="stat"><small>{{ h }}</small><span style="font-size:8pt;color:#0A1527">{{ t }}</span></div>{% endfor %}
+    </div>
+    <p>We look forward to working with you.</p><p style="margin-top:8pt">Thanks &amp; Regards,</p>
+    <div style="margin-top:30pt;width:150pt;border-top:.8pt solid #8A9AAA;padding-top:3pt">{{ signatory or "Name & Designation" }}</div><b>For {{ co.legal_name }}</b>
+  </div>
+</section>
+
+{# ============================== 02 FINDINGS ============================== #}
+{%- set z = b.units_by_zone or {} -%}{%- set zt = z.values()|sum if z else 0 -%}
+<section class="page">
+  {{ head(2, "Findings", "Bill Analysis & Key Conditions") }}
+  <div class="body">
+    <p>{% if b.bill_date %}KSEB bill dated {{ b.bill_date }}{% else %}The KSEB bill{% endif %}{% if b.consumer_no %} (consumer no. {{ b.consumer_no }}){% endif %} shows about <b>{{ out.cons|inr }} units a month</b> on tariff <b>{{ out.tariff_name }}</b>. At today's rates the energy part of the bill is about <b>₹{{ out.bill_today_month|inr }} a month</b> (₹{{ out.bill_today_year|inr }} a year).</p>
+    <div class="stats" style="grid-template-columns:repeat(4,1fr)">
+      <div class="stat"><small>Monthly use</small><b>{{ out.cons|inr }}</b><span>units / month</span></div>
+      <div class="stat"><small>Energy bill</small><b>₹{{ out.bill_today_month|inr }}</b><span>per month, incl. duty</span></div>
+      <div class="stat"><small>Connected load</small><b>{{ (b.connected_load_kw or 0)|round(1) }} kW</b><span>{{ "Three" if b.phase == "3" else "Single" }} phase</span></div>
+      <div class="stat"><small>Solar to cover use</small><b>{{ out.suggested_kwp|round(1) }} kWp</b><span>at {{ out.rules.yield_ongrid }} units/kWp/day</span></div>
+    </div>
+    {% if zt %}<h2>Consumption by time zone</h2>
+    {% for name, v in z.items() %}<div style="display:grid;grid-template-columns:110pt 1fr 70pt;gap:8pt;align-items:center;margin-bottom:5pt;font-size:8pt"><span>{{ name }}</span><div class="bar"><b style="width:{{ (v / zt * 100)|round(1) }}%"></b></div><span class="r">{{ v|inr }} units</span></div>{% endfor %}
+    <p class="small muted">Solar generates in normal (daytime) hours; {{ ((z.get("Normal", 0)) / zt * 100)|round|int }}% of use falls in that window and can be met directly.</p>{% endif %}
+    <h2>Key conditions</h2>
+    <table><thead><tr><th style="width:130pt">Check</th><th>Finding</th><th style="width:70pt">Result</th></tr></thead>
+      <tr><td>PM Surya Ghar subsidy</td><td>Non-domestic connection ({{ out.tariff_code }}) — not eligible</td><td><b class="neg">Not eligible</b></td></tr>
+      <tr><td>Metering</td><td>Net billing: surplus exported at ₹{{ out.rules.export_rate }}/unit</td><td>—</td></tr>
+      {% set conn = b.connected_load_kw or 0 %}
+      <tr><td>Connected load vs plant</td><td>{{ conn|round(1) }} kW connected; plant {{ out.kws|max }} kW</td><td>{% if conn and out.kws|max > conn %}<b class="neg">Load extension</b>{% else %}<b class="pos">OK</b>{% endif %}</td></tr>
+      {% if out.feasibility %}<tr><td>Transformer capacity (KSEB)</td><td>{{ out.feasibility.balance_kw }} kW balance renewable capacity on the DTR</td><td><b class="{{ 'pos' if out.feasibility.ok else 'neg' }}">{{ "OK" if out.feasibility.ok else "Short" }}</b></td></tr>{% endif %}
+      <tr><td>Tax benefit</td><td>40% accelerated depreciation (WDV) for taxable businesses; GST input credit</td><td><b class="pos">Available</b></td></tr>
+    </table>
+    {% if out.warnings %}<div class="box" style="margin-top:10pt"><h3>Points to note</h3><ul class="bullets">{% for w in out.warnings %}<li>{{ w }}</li>{% endfor %}</ul></div>{% endif %}
+  </div>
+</section>
+
+{# ============================== 03 HOW IT WORKS ============================== #}
+<section class="page">
+  {{ head(3, "How it works", "On-Grid vs Hybrid") }}
+  <div class="body">
+    {% if out.has_ongrid %}<h2 style="margin-top:0">On-grid system</h2>
+    <div class="flow"><div>Solar array<span>{{ opts|selectattr("hybrid", "equalto", false)|map(attribute="kwp")|unique|map("round", 2)|join(" / ") }} kWp</span></div><i>→</i><div>On-grid inverter<span>{{ opts|selectattr("hybrid", "equalto", false)|map(attribute="inverter")|unique|join(" / ") }}</span></div><i>→</i><div>Your loads<span>daytime use first</span></div><i>⇄</i><div>KSEB grid<span>net billing</span></div></div>
+    <p class="small">Solar runs your daytime loads directly; surplus is exported to KSEB at ₹{{ out.rules.export_rate }}/unit under net billing. The plant shuts down when the grid fails (anti-islanding).</p>{% endif %}
+    {% if out.has_hybrid %}{% set hb = (opts|selectattr("hybrid")|first).battery_obj %}<h2>Hybrid system with lithium battery</h2>
+    <div class="flow"><div>Solar array<span>{{ opts|selectattr("hybrid")|map(attribute="kwp")|unique|map("round", 2)|join(" / ") }} kWp</span></div><i>→</i><div>Hybrid inverter<span>BOXER HF</span></div><i>→</i><div>Battery (LFP)<span>{{ hb.kwh }} kWh</span></div><i>→</i><div>Evening loads<span>& power-cut backup</span></div></div>
+    <p class="small">Midday surplus charges the battery instead of being exported cheaply; the battery runs evening loads and keeps essential loads on within milliseconds when the grid fails.</p>{% endif %}
+    <h2>Solar components</h2>
+    <ul class="bullets" style="columns:2">{% for row in out.bom %}<li>{{ row[0] }} — {{ row[1] }}</li>{% endfor %}</ul>
+  </div>
+</section>
+
+{# ============================== 04 TECHNICAL PROPOSAL ============================== #}
+<section class="page">
+  {{ head(4, "Technical proposal", out.kw_text ~ " Technical Proposal") }}
+  <div class="body">
+    <table>
+      <thead><tr><th style="width:80pt"></th>{% for o in opts %}<th class="{{ 'hl' if o.hybrid }}">Option {{ o.letter }} · {{ "Hybrid" if o.hybrid else "On-grid" }}<br><span style="font-weight:400">{{ o.module_label }}</span></th>{% endfor %}</tr></thead>
+      <tr><td><b>Solar modules</b></td>{% for o in opts %}<td>{{ o.qty }} × {{ o.module_obj.short }}</td>{% endfor %}</tr>
+      <tr><td><b>DC capacity</b></td>{% for o in opts %}<td>{{ o.kwp|round(2) }} kWp</td>{% endfor %}</tr>
+      <tr><td><b>Inverter</b></td>{% for o in opts %}<td>{{ (o.n_inv ~ " × ") if o.n_inv > 1 }}{{ o.inverter_obj.make }} {{ o.inverter_obj.model }} — {{ o.inverter_obj.short }}</td>{% endfor %}</tr>
+      <tr><td><b>Battery</b></td>{% for o in opts %}<td>{% if o.battery_obj %}{{ (o.n_bat ~ " × ") if o.n_bat > 1 }}{{ o.battery_unit.model }} — {{ o.battery_unit.short }}{% if o.n_bat > 1 %} ({{ o.battery_obj.kwh|round(2) }} kWh total){% endif %}{% else %}—{% endif %}</td>{% endfor %}</tr>
+      <tr><td><b>String design</b></td>{% for o in opts %}<td>{{ o.string.text }}{% for w in o.string.warnings %}<div class="warn">⚠ {{ w }}</div>{% endfor %}</td>{% endfor %}</tr>
+      <tr><td><b>Generation, yr 1</b></td>{% for o in opts %}<td>≈ {{ o.gen1|inr }} units</td>{% endfor %}</tr>
+      <tr><td><b>Used on site, yr 1</b></td>{% for o in opts %}<td>≈ {{ o.used1|inr }} units</td>{% endfor %}</tr>
+      <tr><td><b>Power cut</b></td>{% for o in opts %}<td>{% if o.hybrid %}Essential loads from battery + solar; about {{ o.backup_h|round(1) }} h at 1 kW{% else %}Plant shuts down with the grid{% endif %}</td>{% endfor %}</tr>
+      <tr><td><b>Module warranty</b></td>{% for o in opts %}<td>{{ o.module_obj.warranty }}</td>{% endfor %}</tr>
+      <tr><td><b>Roof area</b></td>{% for o in opts %}<td>About {{ (o.kwp * out.rules.roof_sqft_per_kwp / 10)|round(0, "ceil")|int * 10 }} sq. ft.</td>{% endfor %}</tr>
+      <tr><td><b>Metering</b></td><td colspan="{{ opts|length }}">Net billing under KSERC (Renewable Energy and Related Matters) Regulations, 2025</td></tr>
+    </table>
+  </div>
+</section>
+
+{# ============================== 05 BOM ============================== #}
+<section class="page">
+  {{ head(5, "Bill of material", "Bill of Material & Warranty") }}
+  <div class="body">
+    <table><thead><tr><th style="width:16pt">#</th><th style="width:80pt">Item</th><th style="width:76pt">Make</th><th>Specification</th>{% for o in opts %}<th class="r" style="width:40pt">{{ o.letter }}</th>{% endfor %}</tr></thead>
+      {% for item, make, spec, q in out.bom %}<tr><td>{{ loop.index }}</td><td><b>{{ item }}</b></td><td>{{ make }}</td><td>{{ spec }}</td>{% for x in q %}<td class="r">{{ x }}</td>{% endfor %}</tr>{% endfor %}</table>
+    <h2>Warranty</h2>
+    <div class="stats" style="grid-template-columns:repeat(3,1fr)">{% for h, t in out.warranty %}<div class="stat"><small>{{ h }}</small><span style="font-size:8pt;color:#0A1527;font-weight:700">{{ t }}</span></div>{% endfor %}</div>
+  </div>
+</section>
+
+{# ============================== 06 COMMERCIAL OFFER ============================== #}
+<section class="page">
+  {{ head(6, "Commercial offer", "Commercial Offer") }}
+  <div class="body">
+    <p class="small muted">Price quote &amp; payment schedule · {{ out.kw_text }} commercial rooftop solar plant · amounts in ₹</p>
+    <table>
+      <thead><tr><th>Description</th>{% for o in opts %}<th class="r {{ 'hl' if o.hybrid }}" style="width:72pt">Option {{ o.letter }} · {{ "Hybrid" if o.hybrid else "On-grid" }}</th>{% endfor %}</tr></thead>
+      <tr><td>{{ out.kw_text }} Solar PV Power Plant — design, supply, installation, testing &amp; commissioning (EPC)</td>{% for o in opts %}<td class="r">{{ o.split.epc|inr }}</td>{% endfor %}</tr>
+      <tr><td>GST on EPC value <span class="small muted">(8.9% effective: 70% supply @ 5% + 30% services @ 18%)</span></td>{% for o in opts %}<td class="r">{{ o.split.gst|inr }}</td>{% endfor %}</tr>
+      <tr class="strong"><td>Total Cost of the Project (inclusive of GST)</td>{% for o in opts %}<td class="r">{{ o.split.price|inr }}</td>{% endfor %}</tr>
+      <tr><td>KSEB registration &amp; feasibility charges (₹1,000/kW + 18% GST) — extra</td>{% for o in opts %}<td class="r">{{ o.split.kseb|inr }}</td>{% endfor %}</tr>
+      <tr><td>Subsidy (PM Surya Ghar) <span class="small muted">— not applicable to non-domestic connections</span></td>{% for o in opts %}<td class="r">Nil</td>{% endfor %}</tr>
+      <tr class="tot"><td>Total Investment (incl. KSEB charges)</td>{% for o in opts %}<td class="r">{{ o.split.net_cost|inr }}</td>{% endfor %}</tr>
+    </table>
+    <div class="box g small" style="margin-top:7pt">{% for o in opts %}Option {{ o.letter }}: {{ o.split.words }}{{ " · " if not loop.last }}{% endfor %} — inclusive of GST.<br><b>Tax benefit:</b> taxable businesses can claim 40% accelerated depreciation (WDV) on the plant, and GST-registered businesses may take input tax credit.</div>
+    <div style="display:grid;grid-template-columns:1.2fr 1fr;gap:12pt;margin-top:10pt">
+      <div><h3>Payment schedule</h3><table><thead><tr><th>Stage</th><th class="r">%</th>{% for o in opts %}<th class="r">{{ o.letter }} ₹</th>{% endfor %}</tr></thead>
+        {% for stage in ["Advance with PO", "Material ready", "Meter installation"] %}<tr><td>{{ stage }}</td><td class="r">{{ (out.rules.payment_schedule[loop.index0] * 100)|int }}%</td>{% set i = loop.index0 %}{% for o in opts %}<td class="r">{{ o.split.schedule[i]|inr }}</td>{% endfor %}</tr>{% endfor %}</table></div>
+      <div class="box"><h3>Payment details</h3><div class="small">In favour of <b>{{ co.legal_name|upper }}</b></div>
+        <table style="font-size:7.4pt;margin-top:4pt"><tr><td>Bank</td><td><b>{{ co.bank_name or "—" }}</b></td></tr><tr><td>Account No.</td><td><b>{{ co.account_no or "—" }}</b></td></tr><tr><td>IFSC</td><td><b>{{ co.ifsc or "—" }}</b></td></tr><tr><td>GSTIN</td><td><b>{{ co.gstin or "—" }}</b></td></tr></table></div>
+    </div>
+  </div>
+</section>
+
+{# ============================== 07 SAVINGS ============================== #}
+<section class="page">
+  {{ head(7, "Savings", "Your 25-Year Savings") }}
+  <div class="body">
+    <table style="font-size:{{ 6.9 if opts|length > 2 else 7.5 }}pt;line-height:1.1">
+      <thead><tr><th rowspan="2">Year</th><th rowspan="2" class="r">Bill without solar (₹)</th>{% for o in opts %}<th colspan="2" class="{{ 'hl' if o.hybrid }}" style="text-align:center">{{ o.letter }} · {{ o.label }}</th>{% endfor %}</tr>
+      <tr>{% for o in opts %}<th class="r {{ 'hl' if o.hybrid }}">Saving ₹</th><th class="r {{ 'hl' if o.hybrid }}">Cumulative ₹</th>{% endfor %}</tr></thead>
+      {% for n in range(25) %}{% set rep = opts|map(attribute="years")|map(attribute=n)|map(attribute="replacement")|sum %}
+      <tr class="{{ 'hl' if rep }}"><td style="padding:2.6pt 5pt">{{ n + 1 }}</td><td class="r" style="padding:2.6pt 5pt">{{ opts[0].years[n].bill_without|inr }}</td>
+      {% for o in opts %}{% set y = o.years[n] %}<td class="r" style="padding:2.6pt 5pt">{{ y.saving|inr }}{% if y.replacement %}*{% endif %}</td><td class="r {{ 'neg' if y.cum < 0 else 'pos' }}" style="padding:2.6pt 5pt">{{ y.cum|inr }}</td>{% endfor %}</tr>{% endfor %}
+      <tr class="tot"><td colspan="2">25-year total</td>{% for o in opts %}<td class="r">{{ o.total_saving|inr }}</td><td class="r">{{ o.net_gain|inr }}</td>{% endfor %}</tr>
+    </table>
+    <p class="small muted" style="margin-top:6pt">{{ (out.rules.daytime_share * 100)|int }}% of use assumed in daytime; savings = lower KSEB bill + exported units at ₹{{ out.rules.export_rate }}; tariff rises {{ (out.rules.escalation * 100)|int }}% a year. * replacement year.</p>
+  </div>
+</section>
+
+{# ============================== 08 PAYBACK ============================== #}
+<section class="page">
+  {{ head(8, "Payback", "Saving & Payback Period") }}
+  <div class="body">
+    <div class="stats" style="grid-template-columns:repeat({{ opts|length if opts|length < 4 else 2 }},1fr)">
+      {% for o in opts %}<div class="stat"><small>Option {{ o.letter }} · {{ o.label }}</small><b>{{ o.payback_text }}</b><span>payback · investment ₹{{ o.split.net_cost|inr }} · saving yr 1 ₹{{ o.saving1|inr }} · 25-yr net gain {{ o.net_gain|lakh }}</span></div>{% endfor %}
+    </div>
+    <h3 style="margin-top:10pt">Estimated monthly generation, year 1 (units)</h3>{{ charts.monthly|safe }}
+    <h3 style="margin-top:6pt">Cumulative net cash position over 25 years (₹)</h3>{{ charts.cumulative|safe }}
+  </div>
+</section>
+
+{# ============================== 09 ASSUMPTIONS & TERMS ============================== #}
+<section class="page">
+  {{ head(9, "Assumptions & terms", "Assumptions & Terms") }}
+  <div class="body">
+    <h3>Basis of calculation</h3><ul class="bullets">{% for h, t in out.assumptions.basis %}<li><b>{{ h }}:</b> {{ t }}</li>{% endfor %}</ul>
+    <h3 style="margin-top:6pt">Clarifications</h3><ul class="bullets">{% for h, t in out.assumptions.clar %}<li><b>{{ h }}:</b> {{ t }}</li>{% endfor %}</ul>
+    <h3 style="margin-top:6pt">Terms</h3><table>{% for h, t in texts.terms %}<tr><td style="width:110pt"><b>{{ h }}</b></td><td>{{ t }}</td></tr>{% endfor %}</table>
+    <div class="sig"><div><b>For {{ co.legal_name|upper }}</b><br><br><br>{{ signatory or "Authorised Signatory" }}</div><div><b>Accepted by Customer</b><br><br><br>Name, signature &amp; date</div></div>
+  </div>
+</section>
+
+{# ============================== CONTACT ============================== #}
+<section class="page" style="background:#0A1527;color:#fff">
+  <img src="{{ asset }}/logo-reversed.svg" style="position:absolute;left:42pt;top:120pt;width:230pt">
+  <div style="position:absolute;left:42pt;top:250pt;font-size:24pt;font-weight:800;line-height:1.2">Talk to our engineers<br>about your business.</div>
+  <div style="position:absolute;left:42pt;top:350pt;font-size:8.6pt;line-height:1.7">
+    <div style="font-size:6.6pt;font-weight:800;letter-spacing:2pt;color:#80C200">CONTACT</div>{{ co.phone }} · {{ co.email }} · {{ co.website }}
+    <div style="font-size:6.6pt;font-weight:800;letter-spacing:2pt;color:#80C200;margin-top:14pt">REGIONAL OFFICE</div>{{ co.address }}
+    {% if co.head_office %}<div style="font-size:6.6pt;font-weight:800;letter-spacing:2pt;color:#80C200;margin-top:14pt">HEAD OFFICE</div>{{ co.head_office }}{% endif %}
+  </div>
+  <div style="position:absolute;left:42pt;bottom:40pt;font-size:7pt;letter-spacing:2pt;color:#80C200;font-weight:700">SOLAR · STORAGE · SMART ENERGY MANAGEMENT</div>
+</section>
+</body></html>

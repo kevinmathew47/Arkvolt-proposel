@@ -1,0 +1,7 @@
+__pycache__/
+*.pyc
+monitor.db
+.secret.key
+FIRST_LOGIN.txt
+.vercel
+.env*

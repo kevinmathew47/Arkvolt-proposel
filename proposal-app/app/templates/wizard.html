@@ -1,0 +1,141 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit' if pid else 'New' }} proposal{% endblock %}
+{% block body %}
+<div class="row" style="justify-content:space-between;align-items:center">
+  <h1>{{ 'Edit proposal #' ~ pid if pid else 'New proposal' }}</h1>
+  <div class="row"><span id="saved" class="small muted"></span><button class="btn o sm" onclick="W.save()">Save draft</button>{% if pid %}<a class="btn o sm" href="/p/{{ pid }}">Versions &amp; PDFs</a>{% endif %}</div>
+</div>
+<div class="steps" id="steps">
+  <button data-s="1"><b>1</b>Customer</button><button data-s="2"><b>2</b>Bill &amp; feasibility</button><button data-s="3"><b>3</b>Options</button>
+  <button data-s="4"><b>4</b>Prices</button><button data-s="5"><b>5</b>Review &amp; generate</button>
+</div>
+<div class="wiz">
+<div>
+  {# ------------------------------ 1 CUSTOMER ------------------------------ #}
+  <section class="step card" data-step="1">
+    <h2>Customer</h2>
+    <label class="inline" style="margin-bottom:12px"><input type="checkbox" data-k="customer.blank"> Blank (common) quote — leave the "To" block empty for printed handouts</label>
+    <div class="grid" style="grid-template-columns:120px 1fr">
+      <div><label>Salutation</label><select data-k="customer.salutation"><option>Mr.</option><option>Ms.</option><option>Mrs.</option><option>Dr.</option><option>M/s.</option><option value="">—</option></select></div>
+      <div><label>Name</label><input data-k="customer.name" placeholder="Customer or business name"></div>
+    </div>
+    <div class="grid g2" style="margin-top:12px">
+      <div><label>Address line 1</label><input data-k="customer.addr1"></div>
+      <div><label>Address line 2</label><input data-k="customer.addr2"></div>
+    </div>
+    <div class="grid g4" style="margin-top:12px">
+      <div><label>City / District</label><input data-k="customer.city"></div>
+      <div><label>PIN</label><input data-k="customer.pin" inputmode="numeric" maxlength="6"></div>
+      <div><label>Phone (KSEB-registered mobile)</label><input data-k="customer.phone" inputmode="tel" placeholder="10-digit mobile"></div>
+      <div><label>Email</label><input data-k="customer.email" type="email"></div>
+    </div>
+    <label class="inline" style="margin-top:12px"><input type="checkbox" data-k="customer.site_same" checked> Site same as address</label>
+    <div style="margin-top:16px;text-align:right"><button class="btn g" onclick="W.go(2)">Next →</button></div>
+  </section>
+
+  {# ------------------------------ 2 BILL & FEASIBILITY ------------------------------ #}
+  <section class="step card" data-step="2">
+    <h2>KSEB bill &amp; feasibility</h2>
+    <div class="advice" style="margin-bottom:14px;padding:10px 14px">
+      <label class="inline" style="font-size:14px"><input type="checkbox" data-k="bill.no_bill"> <b>No KSEB bill yet</b> — make a standard / custom quote (e.g. fixed-price 3 kW)</label>
+      <div id="nobill_box" class="grid g3" style="margin-top:10px">
+        <div><label>Connection type</label><select data-k="bill.tariff"><option value="LT-1">Domestic (LT-1) → Adroit, with subsidy</option><option value="LT-7A">Commercial (LT-7A) → ARKVOLT</option><option value="LT-6F">LT-6F → ARKVOLT</option></select></div>
+        <div><label>Assumed use, units/month (optional)</label><input data-k="bill.assumed_units" type="number" step="10" placeholder="auto from plant size"></div>
+        <div class="small muted" style="align-self:end;padding-bottom:6px">Savings use this figure; the proposal says it is an assumption until the real bill is checked.</div>
+      </div>
+    </div>
+    <div id="bill_box">
+    <div class="grid g2">
+      <div class="drop" onclick="document.getElementById('photo').click()">
+        <b>📷 Bill photo</b><div class="small muted">Photo of the paper bill — reads the consumer number{% if not ocr %} <span class="amb">(photo reading not installed on this PC — type the number)</span>{% endif %}</div>
+        <input type="file" id="photo" accept="image/*" capture="environment" hidden onchange="W.photo(this)">
+      </div>
+      <div class="drop" onclick="document.getElementById('pdf').click()">
+        <b>📄 Bill PDF from KSEB</b><div class="small muted">Reads everything: tariff, load, units by time zone, amount</div>
+        <input type="file" id="pdf" accept="application/pdf" hidden onchange="W.pdf(this)">
+      </div>
+    </div>
+    <div id="billmsg" style="margin-top:10px"></div>
+    <div class="assist" style="margin-top:12px">
+      <b>Get the latest bill PDF from KSEB (about 30 seconds)</b>
+      <ol class="small">
+        <li>Consumer no. <b id="a_cno">—</b> and mobile <b id="a_ph">—</b> (from step 1) — <button class="btn o sm" onclick="W.copy('cno')">Copy consumer no.</button> <button class="btn o sm" onclick="W.copy('phone')">Copy mobile</button></li>
+        <li><a class="btn sm" href="https://kseb.in/knowyourbill" target="_blank" rel="noopener">Open KSEB "Know Your Bill" ↗</a> — paste both, type the picture code (CAPTCHA), download the bill PDF.</li>
+        <li>Drop that PDF on <b>📄 Bill PDF</b> above — all fields fill in.</li>
+      </ol>
+      <div class="small muted" style="margin-top:6px">KSEB protects these pages with a CAPTCHA / bot check, so the code has to be typed by a person; the app does the rest.</div>
+    </div>
+    <div class="grid g4" style="margin-top:16px">
+      <div><label>Consumer no.</label><input data-k="bill.consumer_no" inputmode="numeric" maxlength="16"></div>
+      <div><label>Tariff</label><select data-k="bill.tariff"><option value="">— pick —</option>{% for k, v in ctx.tariffs.items() %}<option value="{{ k }}">{{ v }}</option>{% endfor %}</select></div>
+      <div><label>Phase</label><select data-k="bill.phase"><option value="1">1φ</option><option value="3">3φ</option></select></div>
+      <div><label>Connected load (kW)</label><input data-k="bill.connected_load_kw" type="number" step="0.01"></div>
+      <div><label>Electrical Section</label><input data-k="bill.section"></div>
+      <div><label>Bill period (months)</label><select data-k="bill.months"><option value="2">2 (bi-monthly)</option><option value="1">1</option></select></div>
+      <div><label>Units in bill</label><input data-k="bill.units" type="number" step="1"></div>
+      <div><label>Bill amount ₹ (optional)</label><input data-k="bill.bill_amount" type="number" step="1"></div>
+    </div>
+    <div class="row" style="margin-top:12px;gap:18px">
+      <label class="inline"><input type="checkbox" data-k="bill.society"> Housing society / common area</label>
+      <label class="inline"><input type="checkbox" data-k="bill.rented"> Premises rented</label>
+      <label class="inline"><input type="checkbox" data-k="bill.second_connection"> Second connection on bill</label>
+    </div>
+    <div class="assist" style="margin-top:14px">
+      <b>Transformer feasibility (KSEB RE capacity)</b>
+      <div class="small">KSEB allows solar up to 90% of the distribution transformer. <a class="btn o sm" href="https://wss.kseb.in/selfservices/reCap" target="_blank" rel="noopener">Open KSEB capacity check ↗</a> paste the consumer no., then enter the <b>balance capacity</b> shown:</div>
+      <div class="row" style="margin-top:8px"><div style="width:200px"><label>Balance capacity on transformer (kW)</label><input data-k="bill.transformer_balance_kw" type="number" step="0.1"></div><div id="feas" class="small" style="padding-bottom:10px"></div></div>
+    </div>
+    </div>
+    <div id="advice" style="margin-top:14px"></div>
+    <div style="margin-top:16px;display:flex;justify-content:space-between"><button class="btn o" onclick="W.go(1)">← Back</button><button class="btn g" onclick="W.go(3)">Next →</button></div>
+  </section>
+
+  {# ------------------------------ 3 OPTIONS ------------------------------ #}
+  <section class="step card" data-step="3">
+    <div class="row" style="justify-content:space-between;align-items:center;margin-bottom:12px">
+      <h2 style="margin:0">Options (1 to 4)</h2>
+      <div class="row"><span class="small muted">Quick pick:</span><button class="btn o sm" onclick="W.quick(3)">3 kW all four</button><button class="btn o sm" onclick="W.quick(5)">5 kW all four</button>
+        <input id="qkw" type="number" min="1" step="0.5" placeholder="any kW" style="width:90px;padding:6px 8px"><button class="btn o sm" onclick="W.quick(+document.getElementById('qkw').value)">all four</button>
+        <button class="btn o sm" onclick="W.addOpt()">+ Add option</button></div>
+    </div>
+    <div class="optgrid" id="opts"></div>
+    <div style="margin-top:16px;display:flex;justify-content:space-between"><button class="btn o" onclick="W.go(2)">← Back</button><button class="btn g" onclick="W.go(4)">Next →</button></div>
+  </section>
+
+  {# ------------------------------ 4 PRICES ------------------------------ #}
+  <section class="step card" data-step="4">
+    <h2>Prices <span class="small muted">(inclusive of GST, exclusive of KSEB charges)</span></h2>
+    <div style="overflow-x:auto"><table class="t" id="prices"></table></div>
+    <div style="margin-top:12px"><label>Discount reason (required if a price is overridden)</label><input data-k="discount_reason"></div>
+    <p class="small muted">Overrides more than {{ ctx.max_discount }}% below the package price need manager approval before the PDF can be generated.</p>
+    <div style="margin-top:16px;display:flex;justify-content:space-between"><button class="btn o" onclick="W.go(3)">← Back</button><button class="btn g" onclick="W.go(5)">Next →</button></div>
+  </section>
+
+  {# ------------------------------ 5 REVIEW ------------------------------ #}
+  <section class="step card" data-step="5">
+    <h2>Review &amp; generate</h2>
+    <div class="grid g2">
+      <div><label>Extra clarifications (one per line — added on the Assumptions page)</label><textarea data-k="clarifications_text" style="font-family:inherit"></textarea></div>
+      <div><label>Custom sentence for the welcome letter (optional)</label><textarea data-k="welcome_extra" style="font-family:inherit"></textarea>
+        <label style="margin-top:8px">Signatory (name &amp; designation)</label><input data-k="signatory"></div>
+    </div>
+    <div id="review_warn" style="margin-top:12px"></div>
+    <div class="row" style="margin-top:14px">
+      <button class="btn g" id="genbtn" onclick="W.generate()">⚡ Generate PDF</button>
+      <button class="btn o" onclick="W.save()">Save draft</button>
+      <button class="btn o" onclick="W.preview()">↻ Refresh preview</button>
+      {% if pid %}<form method="post" action="/p/{{ pid }}/duplicate" style="display:inline"><button class="btn o">Duplicate as new proposal</button></form>{% endif %}
+      <span id="genmsg"></span>
+    </div>
+    <iframe class="preview" id="preview" style="margin-top:14px"></iframe>
+  </section>
+</div>
+
+{# ------------------------------ LIVE SUMMARY ------------------------------ #}
+<aside class="summary" id="summary"><div class="muted small">Summary updates as you type.</div></aside>
+</div>
+{% endblock %}
+{% block scripts %}
+<script>window.CTX = {{ ctx|tojson }}; window.PID = {{ pid|tojson }}; window.INPUTS = {{ inputs|tojson }};</script>
+<script src="/static/wizard.js?v={{ v }}"></script>
+{% endblock %}

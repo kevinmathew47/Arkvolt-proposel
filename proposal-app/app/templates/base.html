@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{% block title %}Solar Proposal Generator{% endblock %} · ARKVOLT</title>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/app.css?v={{ v }}">
+<link rel="icon" href="/static/brand/arkvolt/mark-green.svg">
+</head><body>
+{% if me %}
+<header class="top">
+  <a href="/"><img src="/static/brand/arkvolt/logo-reversed.svg" alt="ARKVOLT"></a>
+  <nav>
+    <a href="/" class="{{ 'on' if request.url.path == '/' }}">Proposals</a>
+    <a href="/new" class="{{ 'on' if request.url.path == '/new' }}">+ New proposal</a>
+    {% if me.role == 'admin' %}<a href="/admin" class="{{ 'on' if request.url.path.startswith('/admin') }}">Admin</a>{% endif %}
+  </nav>
+  <div class="me">{{ me.name or me.username }} · {{ me.role }} <a href="/account">Account</a> <a href="/logout">Log out</a></div>
+</header>
+{% endif %}
+<main>{% block body %}{% endblock %}</main>
+{% block scripts %}{% endblock %}
+</body></html>

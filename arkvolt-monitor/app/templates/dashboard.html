@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+{% block title %}Proposals{% endblock %}
+{% block body %}
+<div class="row" style="justify-content:space-between;align-items:center">
+  <h1>Staff proposals</h1>
+  {% if pending %}<a class="btn g" href="/approvals">{{ pending }} waiting for approval →</a>{% endif %}
+</div>
+<div class="grid g3" style="margin-bottom:14px">
+  {% for label, n, kw in kpis %}<div class="card kpi"><span>{{ label }}</span><b>{{ n }} proposal{{ '' if n == 1 else 's' }}</b><span>{{ '%g'|format(kw) }} kW quoted</span></div>{% endfor %}
+</div>
+<div class="card" style="padding:0;overflow-x:auto;margin-bottom:14px">
+<table class="t"><thead><tr><th>Staff</th><th class="r">Proposals</th><th class="r">kW quoted</th><th class="r">Value quoted ₹</th><th>Last activity</th></tr></thead>
+{% for name, n, kw, val, last in per_staff %}<tr><td><a href="/?staff={{ name|urlencode }}"><b>{{ name }}</b></a></td><td class="r">{{ n }}</td><td class="r">{{ '%g'|format(kw) }}</td><td class="r">{{ val|inr }}</td><td class="small">{{ last|dt }}</td></tr>
+{% else %}<tr><td colspan="5" class="muted" style="padding:20px;text-align:center">No staff devices yet — add them under <b>Staff &amp; devices</b>.</td></tr>{% endfor %}
+</table></div>
+<form class="card row" method="get" style="margin-bottom:14px">
+  <div style="flex:2;min-width:180px"><label>Search</label><input name="q" value="{{ f.q }}" placeholder="Customer or reference"></div>
+  <div style="flex:1;min-width:130px"><label>Staff</label><select name="staff"><option value="">All</option>{% for n in staff_names %}<option {{ 'selected' if f.staff == n }}>{{ n }}</option>{% endfor %}</select></div>
+  <div style="flex:1;min-width:120px"><label>Type</label><select name="typ"><option value="">All</option>{% for k, l in [('ongrid','On-grid'),('hybrid','Hybrid'),('offgrid','Off-grid')] %}<option value="{{ k }}" {{ 'selected' if f.typ == k }}>{{ l }}</option>{% endfor %}</select></div>
+  <div style="flex:1;min-width:120px"><label>Brand</label><select name="brand"><option value="">All</option>{% for b in ['ADROIT','ARKVOLT'] %}<option {{ 'selected' if f.brand == b }}>{{ b }}</option>{% endfor %}</select></div>
+  <div style="min-width:140px"><label>From</label><input type="date" name="start" value="{{ f.start }}"></div>
+  <div style="min-width:140px"><label>To</label><input type="date" name="end" value="{{ f.end }}"></div>
+  <button class="btn">Filter</button>
+  <a class="btn o" href="/export.csv?{{ request.url.query }}">⬇ Excel (CSV)</a>
+</form>
+<div class="card" style="padding:0;overflow-x:auto">
+<table class="t"><thead><tr><th>Date</th><th>Staff</th><th>Customer</th><th>Capacity</th><th>Options (type · kW · price ₹)</th><th>Reference</th><th>Status</th></tr></thead>
+{% for e in rows %}<tr>
+  <td class="small">{{ e.created_at|dt }}</td><td><b>{{ e.device.staff_name }}</b></td>
+  <td>{{ e.customer or '—' }}{% if e.place %}<div class="small muted">{{ e.place }}</div>{% endif %}{% if e.brand %} <span class="badge b-{{ e.brand }}">{{ e.brand }}</span>{% endif %}</td>
+  <td><b>{{ e.kw_text }}</b></td>
+  <td class="small">{% for o in e.options %}<span class="badge t-{{ o.type }}">{{ o.type|typ }}</span> {{ o.letter }} · {{ '%g'|format(o.kw or 0) }} kW · ₹{{ o.price|inr }}{% if o.overridden %} <span class="amb">(price changed)</span>{% endif %}<br>{% endfor %}</td>
+  <td class="small">{{ e.ref or '—' }}{% if e.version > 1 %} · v{{ e.version }}{% endif %}</td>
+  <td><span class="badge s-{{ e.status }}">{{ e.status }}</span>{% if not e.within_rules %}<div class="small amb">approved exception</div>{% endif %}</td></tr>
+{% else %}<tr><td colspan="7" class="muted" style="padding:28px;text-align:center">No proposals yet.</td></tr>{% endfor %}
+</table></div>
+<p class="small muted" style="margin-top:8px">Page refreshes every 60 seconds.</p>
+<script>setTimeout(() => location.reload(), 60000)</script>
+{% endblock %}

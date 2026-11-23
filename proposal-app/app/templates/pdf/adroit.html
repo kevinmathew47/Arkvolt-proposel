@@ -1,0 +1,311 @@
+{#- Adroit Universe residential proposal (spec §4.1, §9.1). Fixed artwork comes from the approved reference PDF
+    (static/brand/adroit/*.svg); everything that changes per proposal is drawn here. Units: pt (A4 594.96 × 841.92). -#}
+<!doctype html>
+<html><head><meta charset="utf-8"><title>{{ out.file_name }}</title>
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=block" rel="stylesheet">
+<style>
+@page { size: 594.96pt 841.92pt; margin: 0 }
+* { box-sizing: border-box; margin: 0; padding: 0 }
+body { font-family: Poppins, sans-serif; color: #1f2a37; -webkit-print-color-adjust: exact; print-color-adjust: exact; font-size: 9.6pt; line-height: 1.5 }
+.page { width: 594.96pt; height: 841.92pt; position: relative; overflow: hidden; page-break-after: always; break-after: page;
+        background: #fff center / 100% 100% no-repeat }
+.frame { background-image: url("{{ asset }}/frame.svg") }
+.abs { position: absolute }
+h1.t { position: absolute; left: 45.4pt; top: 81pt; font-size: 25pt; line-height: 35pt; font-weight: 700; color: #0d2e4f; white-space: nowrap }
+h1.t b { color: #1b69a8; font-weight: 700 }
+.t-bar { position: absolute; left: 45pt; top: 121pt; width: 74pt; height: 3pt; background: #f5b82e }
+.body { position: absolute; left: 45pt; right: 45pt; top: 134pt; bottom: 44pt }
+.foot { position: absolute; left: 47.4pt; top: 812.3pt; font-size: 7.5pt; line-height: 10.5pt; color: #5b6b7c; white-space: nowrap }
+.pno { position: absolute; left: 532pt; width: 34pt; text-align: center; top: 812.3pt; font-size: 9pt; line-height: 12.6pt; font-weight: 700; color: #fff }
+h2 { font-size: 13pt; font-weight: 700; color: #0d2e4f; margin: 12pt 0 6pt }
+h3 { font-size: 10.5pt; font-weight: 700; color: #0d2e4f; margin: 0 0 4pt }
+p { margin-bottom: 7pt }
+.muted { color: #5b6b7c }
+.small { font-size: 7.6pt; line-height: 1.45 }
+table { width: 100%; border-collapse: collapse; font-size: 8pt; line-height: 1.35 }
+th, td { padding: 4pt 5pt; text-align: left; vertical-align: top; border-bottom: .6pt solid #e1e8ef }
+thead th { background: #0d2e4f; color: #fff; font-weight: 600; font-size: 7.6pt; border: 0 }
+thead th.opt { background: #1b69a8 }
+thead th.opt.b { background: #3fa9f5 }
+td.r, th.r { text-align: right }
+tr.hl td { background: #fff6dc }
+tr.tot td { background: #0d2e4f; color: #fff; font-weight: 700 }
+tr.strong td { font-weight: 700; color: #0d2e4f; background: #eaf3fb }
+.neg { color: #d64545 } .pos { color: #2e8b57 }
+.panel { background: #eaf3fb; border-radius: 6pt; padding: 9pt 11pt }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 8pt }
+.grid4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8pt }
+.card { background: #eaf3fb; border-radius: 6pt; padding: 10pt 10pt 10pt 44pt; position: relative; min-height: 54pt }
+.card svg { position: absolute; left: 13pt; top: 12pt; width: 20pt; height: 20pt; fill: none; stroke: #1b69a8; stroke-width: 1.6; stroke-linecap: round; stroke-linejoin: round }
+.card b { display: block; color: #1f2a37; font-size: 8.8pt }
+.card span { font-size: 8.6pt; color: #3b4652 }
+.tile { border: .8pt solid #e1e8ef; border-radius: 6pt; padding: 8pt; text-align: center }
+.tile small { display: block; font-size: 6.8pt; color: #5b6b7c }
+.tile b { display: block; font-size: 13pt; color: #1b69a8; line-height: 1.2; margin: 2pt 0 }
+.tile i { font-style: normal; font-size: 6.4pt; color: #5b6b7c }
+.bullets { list-style: none }
+.bullets li { position: relative; padding-left: 13pt; margin-bottom: 5pt; font-size: 8.4pt; line-height: 1.45 }
+.bullets li:before { content: ""; position: absolute; left: 0; top: 4pt; width: 6pt; height: 6pt; border-radius: 50%; background: #f5b82e }
+.bullets li b { color: #0d2e4f }
+.sig { display: grid; grid-template-columns: 1fr 1fr; gap: 40pt; margin-top: 26pt; font-size: 8.4pt }
+.sig div { border-top: .8pt solid #8a9aaa; padding-top: 4pt }
+.pbcard { border: .8pt solid #e1e8ef; border-radius: 6pt; overflow: hidden }
+.pbcard .hd { background: #1b69a8; color: #fff; font-weight: 600; font-size: 8pt; padding: 5pt 8pt }
+.pbcard .hd.b { background: #3fa9f5 }
+.pbcard .bd { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 4pt 6pt; padding: 7pt 8pt }
+.pbcard .bd b { display: block; font-size: 11pt; color: #0d2e4f; line-height: 1.15 }
+.pbcard .bd span { font-size: 6.6pt; color: #5b6b7c }
+.chip { display: inline-block; border: .8pt solid #c9d6e3; border-radius: 10pt; padding: 1pt 7pt; font-size: 7.6pt; margin: 0 4pt 4pt 0 }
+.warn { color: #b26b00; font-size: 7.2pt }
+</style></head>
+<body>
+{%- set ns = namespace(p=1) -%}
+{%- set co = out.company -%}
+{%- set footer = co.legal_name ~ " · " ~ out.kw_text ~ " " ~ out.texts.title.replace(" Proposal", "") ~ " Proposal · Ref: " ~ ref -%}
+{%- macro foot() -%}{%- set ns.p = ns.p + 1 -%}<div class="foot">{{ footer }}</div><div class="pno">{{ "%02d"|format(ns.p) }}</div>{%- endmacro -%}
+{%- macro title(a, b="") -%}<h1 class="t">{{ a }}{% if b %} <b>{{ b }}</b>{% endif %}</h1><div class="t-bar"></div>{%- endmacro -%}
+{%- macro icon(name) -%}
+{%- if name == "shield" -%}<svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="m9 12 2 2 4-4"/></svg>
+{%- elif name == "rupee" -%}<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><path d="M8 7h8M8 11h8M14 7c0 3-2 4-6 4l6 6"/></svg>
+{%- elif name == "bolt" -%}<svg viewBox="0 0 24 24"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+{%- else -%}<svg viewBox="0 0 24 24"><path d="m3 10 9-7 9 7v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M9 22V12h6v10"/></svg>{%- endif -%}
+{%- endmacro -%}
+{%- set opts = out.options -%}
+
+{# ============================== 1 · COVER ============================== #}
+<section class="page" style="background-image:url('{{ asset }}/cover.svg')">
+  <div class="abs" style="left:296pt;top:188pt;font-size:9pt;line-height:14pt;color:#5b6b7c"><b style="color:#0d2e4f">Date:</b> {{ date }}<br><b style="color:#0d2e4f">Ref:</b> {{ ref }}</div>
+  <div class="abs" style="left:296pt;top:238pt;font-size:{{ 44 if out.kws|length == 1 else 32 }}pt;line-height:1.1;font-weight:700;color:#1b69a8">{{ out.kw_text }}</div>
+  <div class="abs" style="left:296pt;top:{{ 300 if out.kws|length == 1 else 292 }}pt;width:270pt;font-size:24pt;line-height:1.2;font-weight:700;color:#0d2e4f">{{ out.texts.title.replace(" Proposal", "") }}<br>Proposal</div>
+  <div class="abs" style="left:310pt;top:394pt;font-size:9.4pt;line-height:14pt;color:#5b6b7c">{% for l in out.texts.subtitle %}{{ l }}<br>{% endfor %}</div>
+  {# To + By flow together: a longer customer address pushes "By" down instead of overlapping it #}
+  {% set tl = out.texts.to_lines %}{% set rows = 3 if tl|length <= 3 else tl|length %}{% set rh = 25 if rows <= 3 else 20 %}
+  <div class="abs" style="left:296pt;top:478pt;width:230pt">
+    <div style="font-size:11pt;font-weight:700;color:#1b69a8">To,</div>
+    <div style="margin-top:6pt;width:222pt;font-size:{{ 9.6 if rows <= 3 else 9 }}pt">
+      {% for i in range(rows) %}<div style="border-bottom:.8pt solid #8a9aaa;height:{{ rh }}pt;line-height:{{ rh + 4 }}pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;{% if i == 0 %}font-weight:600;color:#0d2e4f{% endif %}">{{ tl[i] if i < tl|length else "" }}</div>{% endfor %}
+      <div style="font-size:6.8pt;line-height:16pt;color:#5b6b7c">Customer name &amp; address</div>
+    </div>
+    <div style="margin-top:{{ 22 if rows <= 3 else 14 }}pt;font-size:8.8pt;line-height:13.5pt">
+      <div style="font-size:11pt;font-weight:700;color:#1b69a8;margin-bottom:6pt">By,</div>
+      <b style="color:#1f2a37">{{ co.legal_name }}</b><br>{{ co.address }}
+    </div>
+  </div>
+</section>
+
+{# ============================== 2 · WELCOME ============================== #}
+<section class="page frame">
+  {{ title("Welcome") }}
+  <div class="body" style="font-size:9.4pt">
+    <div style="display:flex;justify-content:space-between;margin-top:1pt"><span><b>Ref No:</b> {{ ref }}</span><span><b>Date:</b> {{ date }}</span></div>
+    <div style="margin-top:14pt">To,</div>
+    <div style="width:230pt;margin-top:4pt">{% set tl = out.texts.to_lines %}{% for i in range(3 if tl|length <= 3 else tl|length) %}<div style="border-bottom:.8pt solid #8a9aaa;height:{{ 21 if tl|length <= 3 else 18 }}pt;line-height:{{ 24 if tl|length <= 3 else 21 }}pt;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;{% if i == 0 %}font-weight:600;color:#0d2e4f{% endif %}">{{ tl[i] if i < tl|length else "" }}</div>{% endfor %}</div>
+    <p style="margin-top:12pt;font-weight:700;color:#0d2e4f">Sub: {{ out.texts.subject }}</p>
+    <p>Dear Sir / Madam,</p>
+    <p>{{ out.texts.p1 }}</p>
+    <p>{{ out.texts.p2 }}</p>
+    <div class="grid2" style="margin:14pt 0 12pt">
+      {% for ic, h, t in out.texts.cards %}<div class="card">{{ icon(ic) }}<b>{{ h }}</b><span>{{ t }}</span></div>{% endfor %}
+    </div>
+    <p>We look forward to serving you.</p>
+    <p style="margin-top:10pt">Thanks &amp; Regards,</p>
+    <div style="margin-top:34pt;width:150pt;border-top:.8pt solid #8a9aaa;padding-top:3pt">{{ signatory or "Name & Designation" }}</div>
+    <b>For {{ co.legal_name }}</b>
+  </div>
+  {{ foot() }}
+</section>
+
+{# ============================== 3 · ABOUT ============================== #}
+<section class="page frame">
+  {{ title("About", "Company") }}
+  <div class="body">
+    {% for para in texts.about.split("\n\n") %}<p>{{ para }}</p>{% endfor %}
+    <h2>Why choose {{ co.short_name.split()[0] }}?</h2>
+    <div class="grid2">
+      {% for h, t in texts.why %}<div class="card" style="background:#fff;border:.8pt solid #e1e8ef">{{ icon(["shield","bolt","shield","home"][loop.index0]) }}<b>{{ h }}</b><span>{{ t }}</span></div>{% endfor %}
+    </div>
+    <h2>Company details</h2>
+    <table>
+      <tr><td style="width:150pt"><b>Constitution</b></td><td>{{ co.constitution }}</td></tr>
+      <tr><td><b>Office address</b></td><td>{{ co.address }}</td></tr>
+      <tr><td><b>GSTIN</b></td><td>{{ co.gstin }}</td></tr>
+      <tr><td><b>PM Surya Ghar vendor registration</b></td><td>{{ co.pmsg_reg }}</td></tr>
+      <tr><td><b>KSEB / electrical contractor licence</b></td><td>{{ co.kseb_licence }}</td></tr>
+    </table>
+  </div>
+  {{ foot() }}
+</section>
+
+{# ============================== 4/5 · DIAGRAMS ============================== #}
+{%- set arr = opts|map(attribute="kwp")|unique|map("round", 2)|map("string")|map("replace", ".0", "")|join(" / ") ~ " kWp array" -%}
+{% if out.has_ongrid %}{% set og = opts|selectattr("hybrid", "equalto", false)|list %}
+<section class="page" style="background-image:url('{{ asset }}/page_ongrid.svg')">
+  <div class="abs" style="left:56pt;width:118pt;text-align:center;top:261.7pt;font-size:7.8pt;line-height:10.9pt;color:#5b6b7c">{{ og|map(attribute="kwp")|unique|map("round", 2)|join(" / ") }} kWp array</div>
+  <div class="abs" style="left:226pt;width:142pt;text-align:center;top:261.7pt;font-size:7.8pt;line-height:10.9pt;color:#dcebfa;white-space:nowrap">{{ og|map(attribute="inverter_obj.make")|first }} {{ og|map(attribute="inverter")|unique|join(" / ") }} · 1-phase</div>
+  {{ foot() }}
+</section>{% endif %}
+{% if out.has_hybrid %}{% set hy = opts|selectattr("hybrid")|list %}{% set hb = hy[0].battery_obj %}
+<section class="page" style="background-image:url('{{ asset }}/page_hybrid.svg')">
+  <div class="abs" style="left:72pt;width:120pt;text-align:center;top:260pt;font-size:8.3pt;line-height:11.6pt;color:#5b6b7c">{{ hy|map(attribute="kwp")|unique|map("round", 2)|join(" / ") }} kWp array</div>
+  <div class="abs" style="left:250pt;width:108pt;text-align:center;top:260pt;font-size:8.3pt;line-height:11.6pt;color:#dcebfa;white-space:nowrap">BOXER HF {{ hy|map(attribute="kw")|unique|map("round", 0)|map("int")|join(" / ") }} kW</div>
+  <div class="abs" style="left:197.4pt;top:390.2pt;font-size:8.26pt;line-height:11.6pt;color:#5b6b7c;white-space:nowrap">{{ hb.model.split()[0] }} {{ hb.kwh }} kWh LFP</div>
+  <div class="abs" style="left:114.2pt;top:624.5pt;width:420pt;font-size:9.3pt;line-height:13pt">Inverter isolates from the grid and runs essential loads from battery and solar (up to {{ hy|map(attribute="kw")|max|int }} kW).</div>
+  {{ foot() }}
+</section>{% endif %}
+
+{# ============================== 6 · TECHNICAL PROPOSAL ============================== #}
+<section class="page frame">
+  {{ title(out.kw_text, "Technical Proposal") }}
+  <div class="body">
+    <div class="grid4" style="margin-bottom:9pt">
+      <div class="tile"><small>Plant Capacity</small><b>{{ out.kw_text }}</b><i>{{ opts|map(attribute="kwp")|unique|map("round", 2)|join(" / ") }} kWp DC array</i></div>
+      <div class="tile"><small>Structure Type</small><b>Elevated</b><i>Hot-dip GI</i></div>
+      <div class="tile"><small>Options</small><b style="font-size:{{ 10 if out.types|length > 1 else 13 }}pt">{{ "On-grid / Hybrid" if out.types|length > 1 else ("Hybrid" if out.has_hybrid else "On-grid") }}</b><i>{% if out.has_hybrid %}Hybrid adds {{ (opts|selectattr("hybrid")|first).battery_obj.kwh }} kWh battery{% else %}Net metering{% endif %}</i></div>
+      <div class="tile"><small>Subsidy (CFA)</small><b>₹{{ out.cfa_max|inr }}</b><i>PM Surya Ghar</i></div>
+    </div>
+    <p class="small" style="font-size:8.4pt">For {{ out.cons|inr }} units a month, about {{ out.suggested_kwp|round(1) }} kWp of panels covers your use. {% if opts|length > 1 %}Options {{ opts|map(attribute="letter")|join(", ") }} are compared side by side below.{% endif %}</p>
+    <table>
+      <thead><tr><th style="width:84pt"></th>{% for o in opts %}<th class="opt {{ 'b' if loop.index0 % 2 }}">Option {{ o.letter }} · {{ "Hybrid" if o.hybrid else "On-grid" }}<br><span style="font-weight:400">{{ o.module_label }}</span></th>{% endfor %}</tr></thead>
+      <tr><td><b>Solar modules</b></td>{% for o in opts %}<td>{{ o.qty }} × {{ o.module_obj.short }}</td>{% endfor %}</tr>
+      <tr><td><b>DC capacity</b></td>{% for o in opts %}<td>{{ o.kwp|round(2) }} kWp</td>{% endfor %}</tr>
+      <tr><td><b>Inverter</b></td>{% for o in opts %}<td>{{ (o.n_inv ~ " × ") if o.n_inv > 1 }}{{ o.inverter_obj.make }} {{ o.inverter_obj.model }} — {{ o.inverter_obj.short }}</td>{% endfor %}</tr>
+      <tr><td><b>Battery</b></td>{% for o in opts %}<td>{% if o.battery_obj %}{{ (o.n_bat ~ " × ") if o.n_bat > 1 }}{{ o.battery_unit.model }} — {{ o.battery_unit.short }}{% if o.n_bat > 1 %} ({{ o.battery_obj.kwh|round(2) }} kWh total){% endif %}{% else %}—{% endif %}</td>{% endfor %}</tr>
+      <tr><td><b>String design</b></td>{% for o in opts %}<td>{{ o.string.text }}{% for w in o.string.warnings %}<div class="warn">⚠ {{ w }}</div>{% endfor %}</td>{% endfor %}</tr>
+      <tr><td><b>Power cut</b></td>{% for o in opts %}<td>{% if o.hybrid %}Essential loads from battery + solar; about {{ o.backup_h|round(1) }} h at 1 kW{% else %}Plant shuts down with the grid (anti-islanding){% endif %}</td>{% endfor %}</tr>
+      <tr><td><b>Generation, yr 1</b></td>{% for o in opts %}<td>≈ {{ o.gen1|inr }} units</td>{% endfor %}</tr>
+      <tr><td><b>Module warranty</b></td>{% for o in opts %}<td>{{ o.module_obj.warranty }}</td>{% endfor %}</tr>
+      <tr><td><b>Roof area</b></td>{% for o in opts %}<td>About {{ (o.kwp * out.rules.roof_sqft_per_kwp / 10)|round(0, "ceil")|int * 10 }} sq. ft.{% if o.hybrid %} + wall space for battery{% endif %}</td>{% endfor %}</tr>
+      <tr><td><b>Metering</b></td><td colspan="{{ opts|length }}">Net metering under KSERC (Renewable Energy and Related Matters) Regulations, 2025</td></tr>
+    </table>
+    <p class="small muted" style="margin-top:8pt"><b style="color:#0d2e4f">Choosing an option:</b> {% if out.has_ongrid %}on-grid gives the lowest cost and fastest payback where grid supply is reliable. {% endif %}{% if out.has_hybrid %}Hybrid adds backup during power cuts and stores solar for the evening. {% endif %}{% if opts|map(attribute="make")|unique|list|length > 1 %}Avaada TOPCon generates more per kW and loses less output over the years.{% endif %}</p>
+  </div>
+  {{ foot() }}
+</section>
+
+{# ============================== 7 · BOM + WARRANTY ============================== #}
+<section class="page frame">
+  {{ title("Bill of", "Material") }}
+  <div class="body">
+    <table>
+      <thead><tr><th style="width:16pt">#</th><th style="width:78pt">Item</th><th style="width:76pt">Make</th><th>Specification</th>{% for o in opts %}<th class="r" style="width:40pt">{{ o.letter }}</th>{% endfor %}</tr></thead>
+      {% for item, make, spec, q in out.bom %}<tr><td>{{ loop.index }}</td><td><b>{{ item }}</b></td><td>{{ make }}</td><td>{{ spec }}</td>{% for x in q %}<td class="r">{{ x }}</td>{% endfor %}</tr>{% endfor %}
+    </table>
+    <p class="small muted" style="margin-top:4pt">{% for o in opts %}{{ o.letter }} = {{ o.label }}{{ "; " if not loop.last }}{% endfor %}</p>
+    <h2>Warranty</h2>
+    <div class="grid4" style="grid-template-columns:repeat(3,1fr)">
+      {% for h, t in out.warranty %}<div class="panel" style="padding:7pt 9pt"><div class="small muted">{{ h }}</div><b style="font-size:8.6pt;color:#0d2e4f">{{ t }}</b></div>{% endfor %}
+    </div>
+  </div>
+  {{ foot() }}
+</section>
+
+{# ============================== 8 · TIMELINE + SCOPE ============================== #}
+<section class="page frame">
+  {{ title("Project", "Timeline") }}
+  <div class="body">
+    <p style="font-size:10pt">The plant can be live about 6 weeks after the purchase order, depending mainly on KSEB feasibility and net-meter timelines.</p>
+    <img src="{{ asset }}/timeline.svg" style="width:515pt;margin:4pt 0 0 -5pt">
+    <h2 style="margin-top:14pt">Scope of Work</h2>
+    <div class="grid2" style="gap:14pt">
+      <div class="panel" style="background:#eaf3fb"><h3>Our scope</h3><ol style="padding-left:12pt;font-size:8.4pt">{% for l in scope.ours %}<li style="margin-bottom:3pt">{{ l }}</li>{% endfor %}</ol></div>
+      <div class="panel" style="background:#fff6dc"><h3>Customer scope</h3><ol style="padding-left:12pt;font-size:8.4pt">{% for l in scope.customer %}<li style="margin-bottom:3pt">{{ l }}</li>{% endfor %}</ol></div>
+    </div>
+  </div>
+  {{ foot() }}
+</section>
+
+{# ============================== 9 · COMMERCIAL OFFER ============================== #}
+<section class="page frame">
+  {{ title("Commercial", "Offer") }}
+  <div class="body">
+    <p class="small muted">Price quote &amp; payment schedule · {{ out.kw_text }} rooftop solar plant{{ " under PM Surya Ghar: Muft Bijli Yojana" if out.subsidy }} · amounts in ₹</p>
+    <table>
+      <thead><tr><th>Description</th>{% for o in opts %}<th class="opt {{ 'b' if loop.index0 % 2 }} r" style="width:70pt">Option {{ o.letter }} · {{ "Hybrid" if o.hybrid else "On-grid" }}<br><span style="font-weight:400">{{ o.module_label }}</span></th>{% endfor %}</tr></thead>
+      <tr><td>{{ out.kw_text }} Solar PV Power Plant — design, supply, installation, testing &amp; commissioning (EPC), as per scope{% if out.has_hybrid %}<br><span class="small muted">{{ opts|selectattr("hybrid")|map(attribute="letter")|join(" and ") }} include the {{ (opts|selectattr("hybrid")|first).battery_obj.kwh }} kWh lithium battery</span>{% endif %}</td>{% for o in opts %}<td class="r">{{ o.split.epc|inr }}</td>{% endfor %}</tr>
+      <tr><td>GST on EPC value<br><span class="small muted">Indicative 8.9% effective: 70% supply @ 5% + 30% services @ 18%</span></td>{% for o in opts %}<td class="r">{{ o.split.gst|inr }}</td>{% endfor %}</tr>
+      <tr class="strong"><td>Total Cost of the Project (inclusive of GST)</td>{% for o in opts %}<td class="r">{{ o.split.price|inr }}</td>{% endfor %}</tr>
+      <tr><td>KSEB registration &amp; feasibility charges (₹1,000/kW + 18% GST) — extra, payable at KSEB application</td>{% for o in opts %}<td class="r">{{ o.split.kseb|inr }}</td>{% endfor %}</tr>
+      <tr><td>Less: Central Financial Assistance (PM Surya Ghar) — credited to the customer's bank account</td>{% for o in opts %}<td class="r">({{ o.split.cfa|inr }})</td>{% endfor %}</tr>
+      <tr class="tot"><td>Effective Cost After Subsidy (incl. KSEB charges)</td>{% for o in opts %}<td class="r">{{ o.split.net_cost|inr }}</td>{% endfor %}</tr>
+    </table>
+    <div class="panel small" style="margin-top:7pt">{% for o in opts %}Option {{ o.letter }}: {{ o.split.words }}{{ " · " if not loop.last }}{% endfor %} — all inclusive of GST. KSEB registration charges are extra. Additional cost applies for structure heights above 2 m or extra cable runs beyond 20 m.</div>
+    <div style="display:grid;grid-template-columns:1.25fr 1fr;gap:12pt;margin-top:10pt">
+      <div><h3>Commercial notes</h3><ul class="bullets">
+        <li>Please indicate Option {{ opts|map(attribute="letter")|join(", ") }} on the purchase order.</li>
+        <li>Prices include GST at current rates; any change at invoicing will be adjusted.</li>
+        <li>The ₹{{ out.cfa_max|inr }} subsidy is paid by the Government directly to the customer after commissioning, KSEB inspection and portal approval.</li>
+        <li>KSEB meter deposit / rent, if any, is payable at KSEB rates.</li></ul></div>
+      <div class="panel" style="background:#fff;border:.8pt solid #e1e8ef"><h3>Payment details</h3>
+        <div class="small">Cheque / NEFT / RTGS in favour of<br><b>{{ co.legal_name|upper }}</b></div>
+        <table style="margin-top:4pt;font-size:7.6pt"><tr><td>Bank</td><td><b>{{ co.bank_name }}</b></td></tr><tr><td>Account No.</td><td><b>{{ co.account_no }}</b></td></tr>
+        <tr><td>IFSC</td><td><b>{{ co.ifsc }}</b></td></tr><tr><td>Branch</td><td><b>{{ co.branch }}</b></td></tr><tr><td>GSTIN</td><td><b>{{ co.gstin }}</b></td></tr></table></div>
+    </div>
+    <h3 style="margin-top:10pt">Payment schedule</h3>
+    <table><thead><tr><th>Stage</th><th class="r">%</th>{% for o in opts %}<th class="r">{{ o.letter }} ₹</th>{% endfor %}</tr></thead>
+      {% for stage in ["Advance with PO", "Material ready", "Meter installation"] %}<tr><td>{{ stage }}</td><td class="r">{{ (out.rules.payment_schedule[loop.index0] * 100)|int }}%</td>{% set i = loop.index0 %}{% for o in opts %}<td class="r">{{ o.split.schedule[i]|inr }}</td>{% endfor %}</tr>{% endfor %}
+    </table>
+  </div>
+  {{ foot() }}
+</section>
+
+{# ============================== 10 · 25-YEAR SAVINGS ============================== #}
+<section class="page frame">
+  {{ title("Know Your", "25-Year Savings") }}
+  <div class="body">
+    <table style="font-size:{{ 6.9 if opts|length > 2 else 7.6 }}pt;line-height:1.1">
+      <thead><tr><th rowspan="2" style="width:22pt">Year</th><th rowspan="2" class="r">Bill without solar (₹)</th>{% for o in opts %}<th colspan="2" class="opt {{ 'b' if loop.index0 % 2 }}" style="text-align:center">{{ o.letter }} · {{ o.label }}</th>{% endfor %}</tr>
+      <tr>{% for o in opts %}<th class="opt {{ 'b' if loop.index0 % 2 }} r">Saving ₹</th><th class="opt {{ 'b' if loop.index0 % 2 }} r">Cumulative ₹</th>{% endfor %}</tr></thead>
+      {% for n in range(25) %}{% set rep = opts|map(attribute="years")|map(attribute=n)|map(attribute="replacement")|sum %}
+      <tr class="{{ 'hl' if rep }}"><td style="padding:2.6pt 5pt">{{ n + 1 }}</td><td class="r" style="padding:2.6pt 5pt">{{ opts[0].years[n].bill_without|inr }}</td>
+        {% for o in opts %}{% set y = o.years[n] %}<td class="r" style="padding:2.6pt 5pt">{{ y.saving|inr }}{% if y.replacement %}*{% endif %}</td><td class="r {{ 'neg' if y.cum < 0 else 'pos' }}" style="padding:2.6pt 5pt">{{ y.cum|inr }}</td>{% endfor %}</tr>{% endfor %}
+      <tr class="tot"><td colspan="2">25-year total</td>{% for o in opts %}<td class="r">{{ o.total_saving|inr }}</td><td class="r">{{ o.net_gain|inr }}</td>{% endfor %}</tr>
+    </table>
+    <p class="small muted" style="margin-top:6pt">Based on {{ out.cons|inr }} units a month. The cumulative position starts at the cost after subsidy ({% for o in opts %}{{ o.letter }} −₹{{ o.split.net_cost|inr }}{{ ", " if not loop.last }}{% endfor %}). Saving in year 1 is the reduction in the KSEB bill plus surplus units paid at ₹{{ out.rules.export_rate }}; bills rise {{ (out.rules.escalation * 100)|int }}% a year. Highlighted rows (*) include replacements: {% if out.has_ongrid %}on-grid inverter in year {{ out.rules.inverter_repl_year }}{% endif %}{% if out.has_ongrid and out.has_hybrid %}; {% endif %}{% if out.has_hybrid %}battery in years {{ out.rules.battery_repl_years|join(" and ") }} (₹{{ out.rules.battery_repl_cost|inr }}){% endif %}.</p>
+  </div>
+  {{ foot() }}
+</section>
+
+{# ============================== 11 · SAVING & PAYBACK ============================== #}
+<section class="page frame">
+  {{ title("Saving &", "Payback Period") }}
+  <div class="body">
+    <div class="grid2" style="gap:8pt">
+      {% for o in opts %}<div class="pbcard"><div class="hd {{ 'b' if loop.index0 % 2 }}">Option {{ o.letter }} · {{ o.kw|int }} kW {{ "Hybrid" if o.hybrid else "On-grid" }} · {{ o.module_label }}</div>
+        <div class="bd"><div><b>{{ o.payback_text }}</b><span>Payback</span></div><div><b>₹{{ o.split.net_cost|inr }}</b><span>Cost after subsidy</span></div><div><b>₹{{ o.saving1|inr }}</b><span>Saving, year 1</span></div>
+        <div><b>{{ o.gen1|inr }}</b><span>Units, year 1</span></div><div><b>{{ o.total_saving|lakh }}</b><span>25-yr savings</span></div><div><b>{{ o.net_gain|lakh }}</b><span>25-yr net gain</span></div></div></div>{% endfor %}
+    </div>
+    <h3 style="margin-top:10pt">Estimated monthly generation, year 1 (units)</h3>
+    <div>{{ charts.monthly|safe }}</div>
+    <h3 style="margin-top:6pt">Cumulative net cash position over 25 years (₹)</h3>
+    <div>{{ charts.cumulative|safe }}</div>
+    <p class="small muted">{% if out.has_ongrid %}On-grid options pay back fastest. {% endif %}{% if out.has_hybrid %}Hybrid options cost more because of the battery and hybrid inverter; they save about the same on the bill and add backup during power cuts. {% endif %}Savings use {{ out.cons|inr }} units a month and will be reworked from your KSEB bill.</p>
+  </div>
+  {{ foot() }}
+</section>
+
+{# ============================== 12 · ASSUMPTIONS ============================== #}
+<section class="page frame">
+  {{ title("Assumptions &", "Clarifications") }}
+  <div class="body">
+    <h3 style="color:#1b69a8">Basis of savings calculation (Kerala, {{ out.tariff_code }} {{ "domestic" if out.subsidy else "" }})</h3>
+    <ul class="bullets">{% for h, t in out.assumptions.basis %}<li><b>{{ h }}:</b> {{ t }}</li>{% endfor %}</ul>
+    <div class="panel small" style="margin:6pt 0 10pt">Actual savings depend on your consumption, roof, shading and future tariff and net-metering rules. We will prepare a savings sheet for your own KSEB bill.</div>
+    <h3 style="color:#1b69a8">Assumptions, requirements &amp; clarifications</h3>
+    <ul class="bullets">{% for h, t in out.assumptions.clar %}<li><b>{{ h }}:</b> {{ t }}</li>{% endfor %}<li>Supply and commissioning within 4–6 weeks of purchase order and KSEB feasibility.</li></ul>
+  </div>
+  {{ foot() }}
+</section>
+
+{# ============================== 13 · TERMS ============================== #}
+<section class="page frame">
+  {{ title("General", "Terms & Conditions") }}
+  <div class="body">
+    <table>{% for h, t in texts.terms %}<tr><td style="width:120pt"><b>{{ h }}</b></td><td>{{ t }}</td></tr>{% endfor %}</table>
+    <h2>Guarantees &amp; warranties</h2>
+    <ul class="bullets">{% for h, t in out.warranty %}<li><b>{{ h }}:</b> {{ t }}</li>{% endfor %}
+      <li>Physical damage, misuse, water ingress, unauthorised alteration or natural calamities are not covered.</li></ul>
+    <div class="sig"><div><b>For {{ co.legal_name }}</b><br><br><br>{{ signatory or "Authorised Signatory" }}</div><div><b>Accepted by Customer</b><br><br><br>Name, signature &amp; date</div></div>
+  </div>
+  {{ foot() }}
+</section>
+</body></html>

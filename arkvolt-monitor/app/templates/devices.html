@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block title %}Staff &amp; devices{% endblock %}
+{% block body %}
+<h1>Staff &amp; devices</h1>
+{% if new_token %}
+<div class="warnbox" style="margin-bottom:14px">
+  <b>Device key for {{ new_staff or 'the new device' }} — copy it now, it is shown only once:</b>
+  <div style="font-family:ui-monospace,Consolas,monospace;font-size:15px;background:#fff;padding:8px 10px;border-radius:6px;margin:8px 0;word-break:break-all">{{ new_token }}</div>
+  On the staff laptop, in the proposal app go to <b>Admin → Settings → Monitoring</b> and enter<br>
+  Monitor address: <b>{{ base }}</b> &nbsp; Device key: <i>the key above</i>
+</div>{% endif %}
+<div class="card" style="padding:0;overflow-x:auto;margin-bottom:14px">
+<table class="t"><thead><tr><th>Staff</th><th>Laptop</th><th>Added</th><th>Last seen</th><th>Status</th><th></th></tr></thead>
+{% for d in devices %}<tr><td><b>{{ d.staff_name }}</b></td><td>{{ d.label }}</td><td class="small">{{ d.created_at|dt }}</td><td class="small">{{ d.last_seen|dt }}</td>
+  <td>{% if d.active %}<span class="badge s-Won">Active</span>{% else %}<span class="badge s-Lost">Disabled</span>{% endif %}</td>
+  <td class="r"><form method="post" action="/devices/{{ d.id }}/toggle"><button class="btn o sm">{{ 'Disable' if d.active else 'Enable' }}</button></form></td></tr>
+{% else %}<tr><td colspan="6" class="muted" style="padding:20px;text-align:center">No devices yet.</td></tr>{% endfor %}
+</table></div>
+<form class="card row" method="post" action="/devices" style="margin-bottom:22px">
+  <div style="flex:1;min-width:180px"><label>Staff name</label><input name="staff_name" required placeholder="e.g. Ebinraj B"></div>
+  <div style="flex:1;min-width:180px"><label>Laptop (optional)</label><input name="label" placeholder="e.g. Dell Vostro – sales"></div>
+  <button class="btn g">+ Add device &amp; create key</button>
+</form>
+<h2>Dashboard users</h2>
+<div class="card" style="padding:0"><table class="t"><thead><tr><th>Username</th><th>Name</th><th>Role</th><th>New password</th><th>Active</th><th></th></tr></thead>
+{% for x in users %}<tr><form method="post" action="/users"><td><input type="hidden" name="username" value="{{ x.username }}"><b>{{ x.username }}</b></td>
+  <td><input name="name" value="{{ x.name }}"></td><td><select name="role">{% for r in ['manager','admin'] %}<option {{ 'selected' if x.role == r }}>{{ r }}</option>{% endfor %}</select></td>
+  <td><input name="password" type="password" placeholder="leave blank to keep" autocomplete="new-password"></td><td><input type="checkbox" name="active" {{ 'checked' if x.active }}></td><td><button class="btn g sm">Save</button></td></form></tr>{% endfor %}
+<tr><form method="post" action="/users"><td><input name="username" placeholder="new username" required></td><td><input name="name"></td><td><select name="role"><option>manager</option><option>admin</option></select></td>
+  <td><input name="password" type="password" placeholder="8+ characters" required autocomplete="new-password"></td><td><input type="checkbox" name="active" checked></td><td><button class="btn sm">Add</button></td></form></tr></table></div>
+<p class="small muted">Managers can view everything and approve; admins also manage devices and users.</p>
+{% endblock %}

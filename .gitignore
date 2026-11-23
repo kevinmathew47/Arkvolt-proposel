@@ -1,0 +1,6 @@
+# This repository holds only the two apps; everything else in this folder stays local.
+/*
+!/.gitignore
+!/README.md
+!/proposal-app/
+!/arkvolt-monitor/

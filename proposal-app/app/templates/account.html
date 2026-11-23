@@ -1,0 +1,12 @@
+{% extends "base.html" %}
+{% block title %}Account{% endblock %}
+{% block body %}
+<h1>Account</h1>
+{% if msg %}<div class="msg">{{ msg }}</div>{% endif %}
+<form class="card" method="post" style="max-width:420px">
+  <div class="small muted" style="margin-bottom:10px">{{ me.username }} · {{ me.role }}</div>
+  <label>Current password</label><input type="password" name="old" required autocomplete="current-password">
+  <label style="margin-top:10px">New password (8+ characters)</label><input type="password" name="new" required minlength="8" autocomplete="new-password">
+  <button class="btn g" style="margin-top:14px">Change password</button>
+</form>
+{% endblock %}

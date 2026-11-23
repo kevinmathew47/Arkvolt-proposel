@@ -1,0 +1,11 @@
+# customer data, generated proposals, uploaded bills and secrets stay on the laptop
+data/app.db
+data/pdfs/
+data/uploads/
+data/secret.key
+data/FIRST_LOGIN.txt
+*.db
+__pycache__/
+*.pyc
+.pytest_cache/
+.env*

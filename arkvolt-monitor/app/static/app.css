@@ -1,0 +1,74 @@
+/* Solar Proposal Generator — app chrome (ARKVOLT brand: navy #0A1527, green #80C200, Plus Jakarta Sans) */
+:root { --navy: #0A1527; --navy2: #13213a; --green: #80C200; --gd: #5F9800; --blue: #1b69a8; --muted: #5B6B80;
+  --line: #E3E8EF; --bg: #F3F5F8; --card: #fff; --red: #D64545; --amber: #B26B00; --mint: #EEF5E3; --r: 10px }
+* { box-sizing: border-box }
+body { margin: 0; font-family: 'Plus Jakarta Sans', 'Segoe UI', sans-serif; background: var(--bg); color: var(--navy); font-size: 14px; line-height: 1.5 }
+a { color: var(--blue) }
+.top { background: var(--navy); color: #fff; display: flex; align-items: center; gap: 22px; padding: 0 22px; height: 58px; position: sticky; top: 0; z-index: 20 }
+.top img { height: 30px }
+.top nav { display: flex; gap: 4px; flex: 1 }
+.top nav a { color: #C9D3DE; text-decoration: none; padding: 8px 12px; border-radius: 8px; font-weight: 600; font-size: 13px }
+.top nav a.on, .top nav a:hover { background: var(--navy2); color: #fff }
+.top .me { font-size: 12px; color: #9FB0C8 } .top .me a { color: var(--green); margin-left: 10px }
+main { max-width: 1320px; margin: 0 auto; padding: 22px }
+h1 { font-size: 24px; margin: 4px 0 16px; letter-spacing: -.3px } h2 { font-size: 17px; margin: 0 0 12px } h3 { font-size: 14px; margin: 0 0 8px }
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--r); padding: 18px }
+.muted { color: var(--muted) } .small { font-size: 12px }
+.row { display: flex; gap: 12px; flex-wrap: wrap; align-items: flex-end }
+.grid { display: grid; gap: 14px } .g2 { grid-template-columns: 1fr 1fr } .g3 { grid-template-columns: repeat(3, 1fr) } .g4 { grid-template-columns: repeat(4, 1fr) }
+label { display: block; font-size: 12px; font-weight: 700; color: var(--muted); margin-bottom: 4px }
+label.inline { display: inline-flex; align-items: center; gap: 6px; font-weight: 600; color: var(--navy); font-size: 13px; margin: 0 }
+input, select, textarea { width: 100%; font: inherit; padding: 9px 11px; border: 1px solid #CBD5E1; border-radius: 8px; background: #fff; color: var(--navy) }
+input[type=checkbox], input[type=radio] { width: auto }
+input:focus, select:focus, textarea:focus { outline: 2px solid rgba(128,194,0,.45); border-color: var(--green) }
+textarea { min-height: 80px; font-family: ui-monospace, Consolas, monospace; font-size: 12.5px }
+.btn { display: inline-flex; align-items: center; gap: 6px; border: 0; border-radius: 8px; padding: 9px 16px; font: inherit; font-weight: 700; cursor: pointer; text-decoration: none; background: var(--navy); color: #fff; white-space: nowrap }
+.btn.g { background: var(--green); color: var(--navy) } .btn.o { background: #fff; color: var(--navy); border: 1px solid #CBD5E1 }
+.btn.r { background: var(--red) } .btn.sm { padding: 6px 11px; font-size: 12.5px } .btn:disabled { opacity: .45; cursor: not-allowed }
+table.t { width: 100%; border-collapse: collapse; font-size: 13px }
+table.t th, table.t td { padding: 8px 10px; border-bottom: 1px solid var(--line); text-align: left; vertical-align: top }
+table.t th { font-size: 11.5px; color: var(--muted); text-transform: uppercase; letter-spacing: .4px; background: #F7F9FB }
+table.t td.r, table.t th.r { text-align: right }
+.badge { display: inline-block; padding: 2px 9px; border-radius: 20px; font-size: 11.5px; font-weight: 800; letter-spacing: .3px }
+.b-ADROIT { background: #E3EEF8; color: var(--blue) } .b-ARKVOLT { background: var(--mint); color: var(--gd) }
+.s-Draft { background: #EEF1F5; color: var(--muted) } .s-Generated { background: #E3EEF8; color: var(--blue) } .s-Sent { background: #FFF3D6; color: var(--amber) }
+.s-Won { background: var(--mint); color: var(--gd) } .s-Lost { background: #FBE7E7; color: var(--red) }
+.msg { background: var(--mint); border: 1px solid #CFE6A8; padding: 10px 14px; border-radius: 8px; margin-bottom: 14px }
+.err { background: #FBE7E7; border: 1px solid #F1C0C0; color: #8E2020; padding: 10px 14px; border-radius: 8px; white-space: pre-wrap }
+.warnbox { background: #FFF6DC; border: 1px solid #F3DE9C; color: #6B4A00; padding: 10px 14px; border-radius: 8px }
+.ok { color: var(--gd); font-weight: 700 } .bad { color: var(--red); font-weight: 700 } .amb { color: var(--amber); font-weight: 700 }
+/* wizard */
+.wiz { display: grid; grid-template-columns: 1fr 330px; gap: 18px; align-items: start }
+.steps { display: flex; gap: 6px; margin-bottom: 16px }
+.steps button { flex: 1; border: 0; background: #E6EAF0; color: var(--muted); padding: 10px; border-radius: 8px; font: inherit; font-weight: 700; cursor: pointer; text-align: left; font-size: 13px }
+.steps button b { display: inline-block; width: 22px; height: 22px; border-radius: 50%; background: #CBD5E1; color: #fff; text-align: center; line-height: 22px; margin-right: 6px; font-size: 12px }
+.steps button.on { background: var(--navy); color: #fff } .steps button.on b { background: var(--green); color: var(--navy) }
+.steps button.done b { background: var(--gd) }
+.step { display: none } .step.on { display: block }
+.summary { position: sticky; top: 76px; background: var(--navy); color: #fff; border-radius: var(--r); padding: 16px 18px; font-size: 13px }
+.summary h3 { color: var(--green); font-size: 11px; letter-spacing: 1.6px; text-transform: uppercase; margin: 12px 0 6px }
+.summary .kv { display: flex; justify-content: space-between; gap: 10px; padding: 3px 0; border-bottom: 1px solid #1d2c47 }
+.summary .kv span { color: #9FB0C8 } .summary .kv b { text-align: right }
+.summary .brand { font-size: 20px; font-weight: 800 } .summary .brand.ADROIT { color: #6FB5EC } .summary .brand.ARKVOLT { color: var(--green) }
+.summary ul { margin: 4px 0 0; padding-left: 16px } .summary li { margin-bottom: 4px }
+.summary li.e { color: #FF9C9C } .summary li.w { color: #FFD27A } .summary li.h { color: #BFE3FF }
+.optgrid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px }
+.opt { border: 1px solid var(--line); border-radius: var(--r); padding: 14px; background: #fff; position: relative }
+.opt .hd { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px }
+.opt .letter { width: 30px; height: 30px; border-radius: 50%; background: var(--navy); color: var(--green); display: inline-flex; align-items: center; justify-content: center; font-weight: 800 }
+.opt .st { margin-top: 10px; font-size: 12px; padding: 7px 9px; border-radius: 6px; background: #F7F9FB }
+.seg { display: inline-flex; border: 1px solid #CBD5E1; border-radius: 8px; overflow: hidden }
+.seg label { margin: 0; padding: 7px 12px; cursor: pointer; font-size: 13px; color: var(--navy) }
+.seg input { display: none } .seg input:checked + span { color: var(--gd) } .seg label:has(input:checked) { background: var(--mint) }
+.advice { border: 2px solid var(--green); background: #F6FBEC; border-radius: var(--r); padding: 14px 16px }
+.assist { border: 1px dashed #9FB0C8; border-radius: var(--r); padding: 14px; background: #FAFBFC }
+.assist ol { margin: 6px 0 0 18px; padding: 0 } .assist li { margin-bottom: 4px }
+.drop { border: 2px dashed #CBD5E1; border-radius: var(--r); padding: 14px; text-align: center; cursor: pointer; background: #fff }
+.drop:hover { border-color: var(--green) }
+iframe.preview { width: 100%; height: 760px; border: 1px solid var(--line); border-radius: var(--r); background: #8a94a3 }
+.tabs { display: flex; gap: 4px; border-bottom: 2px solid var(--line); margin-bottom: 16px; flex-wrap: wrap }
+.tabs a { padding: 9px 14px; text-decoration: none; color: var(--muted); font-weight: 700; border-bottom: 3px solid transparent; margin-bottom: -2px }
+.tabs a.on { color: var(--navy); border-color: var(--green) }
+details summary { cursor: pointer; font-weight: 700 }
+@media (max-width: 1000px) { .wiz { grid-template-columns: 1fr } .summary { position: static } .g4, .g3 { grid-template-columns: 1fr 1fr } .optgrid { grid-template-columns: 1fr } }
+@media (max-width: 640px) { .g2, .g3, .g4 { grid-template-columns: 1fr } .top nav a { padding: 6px 7px } main { padding: 14px } }

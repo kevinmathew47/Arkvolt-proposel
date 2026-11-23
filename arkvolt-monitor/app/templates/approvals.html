@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Approvals{% endblock %}
+{% block body %}
+<h1>Approvals</h1>
+<p class="muted">Staff can download proposals up to 5 kW at the fixed rates straight away. Anything else waits here.</p>
+{% for a in pend %}
+<div class="card" style="margin-bottom:12px;border-left:4px solid var(--green)">
+  <div class="row" style="justify-content:space-between"><div><b style="font-size:16px">{{ a.customer or 'Customer' }}</b> · {{ a.kw_text }} <span class="small muted">by <b>{{ a.device.staff_name }}</b> · {{ a.created_at|dt }}</span></div></div>
+  <ul style="margin:8px 0 8px 18px;padding:0">{% for r in a.reasons %}<li class="amb">{{ r }}</li>{% endfor %}</ul>
+  <table class="t" style="margin-bottom:8px"><thead><tr><th>Option</th><th>Type</th><th class="r">kW</th><th class="r">Price ₹</th><th class="r">Standard ₹</th></tr></thead>
+  {% for o in a.options %}<tr><td>{{ o.letter }}</td><td><span class="badge t-{{ o.type }}">{{ o.type|typ }}</span></td><td class="r">{{ '%g'|format(o.kw or 0) }}</td><td class="r"><b>{{ o.price|inr }}</b></td><td class="r">{{ o.package_price|inr if o.package_price else '—' }}</td></tr>{% endfor %}</table>
+  {% if a.note %}<div class="small"><b>Staff note:</b> {{ a.note }}</div>{% endif %}
+  <form method="post" action="/approvals/{{ a.id }}" class="row" style="margin-top:10px">
+    <div style="flex:1;min-width:220px"><label>Comment to staff (optional)</label><input name="comment"></div>
+    <button class="btn g" name="decision" value="Approved">✓ Approve</button><button class="btn r" name="decision" value="Rejected">✕ Reject</button>
+  </form>
+</div>
+{% else %}<div class="msg">Nothing waiting for approval.</div>{% endfor %}
+<h2 style="margin-top:22px">Recent decisions</h2>
+<div class="card" style="padding:0;overflow-x:auto"><table class="t"><thead><tr><th>Decided</th><th>Staff</th><th>Customer</th><th>Capacity</th><th>Decision</th><th>By</th><th>Comment</th></tr></thead>
+{% for a in done %}<tr><td class="small">{{ a.decided_at|dt }}</td><td>{{ a.device.staff_name }}</td><td>{{ a.customer }}</td><td>{{ a.kw_text }}</td>
+  <td><span class="badge {{ 's-Won' if a.status == 'Approved' else 's-Lost' }}">{{ a.status }}</span></td><td class="small">{{ a.decided_by }}</td><td class="small">{{ a.comment }}</td></tr>
+{% else %}<tr><td colspan="7" class="muted" style="padding:20px;text-align:center">No decisions yet.</td></tr>{% endfor %}</table></div>
+<script>setTimeout(() => location.reload(), 45000)</script>
+{% endblock %}

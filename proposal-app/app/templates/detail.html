@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block title %}{{ p.customer_name or 'Proposal' }}{% endblock %}
+{% block body %}
+{% set last = p.versions[-1] if p.versions else None %}
+<div class="row" style="justify-content:space-between;align-items:center">
+  <h1>{{ p.customer_name or 'Proposal #' ~ p.id }} {% if p.brand %}<span class="badge b-{{ p.brand }}">{{ p.brand }}</span>{% endif %} <span class="badge s-{{ p.status }}">{{ p.status }}</span></h1>
+  <div class="row"><a class="btn g" href="/p/{{ p.id }}/edit">Edit / new version</a>
+    <form method="post" action="/p/{{ p.id }}/duplicate"><button class="btn o">Duplicate</button></form></div>
+</div>
+<div class="grid g3" style="margin-bottom:14px">
+  <div class="card"><div class="small muted">Reference</div><b>{{ p.ref_base or 'Assigned at first PDF' }}</b><div class="small muted" style="margin-top:6px">Consumer no. {{ p.consumer_no or '—' }}</div></div>
+  <div class="card"><div class="small muted">System</div><b>{{ p.summary or '—' }}</b><div class="small muted" style="margin-top:6px">Created by {{ users.get(p.created_by) }} on {{ p.created_at.strftime('%d/%m/%Y') }}</div></div>
+  <div class="card"><div class="small muted">Status</div>
+    <form method="post" action="/p/{{ p.id }}/status" class="row" style="margin-top:6px">
+      <button name="status" value="Sent" class="btn o sm">Mark Sent</button>
+      {% if me.role in ('manager', 'admin') %}<button name="status" value="Won" class="btn g sm">Won</button><button name="status" value="Lost" class="btn r sm">Lost</button>{% endif %}
+    </form></div>
+</div>
+{% if last and last.needs_approval and not last.approved_by %}
+<div class="warnbox" style="margin-bottom:14px"><b>Needs manager approval</b> — price override below the allowed margin.
+  Reason given: <i>{{ (last.inputs or {}).get('discount_reason') or '(none)' }}</i>
+  {% if me.role in ('manager', 'admin') %}<form method="post" action="/p/{{ p.id }}/approve" style="display:inline;margin-left:10px"><button class="btn g sm">Approve</button></form>{% endif %}</div>
+{% endif %}
+<div class="card" style="padding:0;overflow-x:auto">
+<table class="t"><thead><tr><th>Version</th><th>Reference</th><th>Options</th><th>Created</th><th>Approval</th><th></th></tr></thead>
+{% for v in p.versions|reverse %}
+<tr><td>v{{ v.version_no }}</td><td>{{ v.ref or '—' }}</td>
+  <td class="small">{% for o in (v.results or {}).get('options', []) %}{{ o.letter }}: {{ o.label }} {{ o.kw }} kW · ₹{{ (o.price or 0)|inr }} · {{ o.payback_text or '—' }}<br>{% endfor %}</td>
+  <td class="small">{{ v.created_at.strftime('%d/%m/%Y %H:%M') }} · {{ users.get(v.created_by) }}</td>
+  <td class="small">{% if v.needs_approval %}{{ 'Approved by ' ~ users.get(v.approved_by) if v.approved_by else 'Pending' }}{% else %}—{% endif %}</td>
+  <td class="r">{% if v.pdf_path %}<a class="btn g sm" href="/files/{{ v.id }}?dl=1">⬇ Download</a> <a class="btn o sm" href="/files/{{ v.id }}" target="_blank">Open</a>{% else %}<span class="small muted">draft</span>{% endif %}</td></tr>
+{% endfor %}
+</table></div>
+{% endblock %}

@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+{% block title %}Log in{% endblock %}
+{% block body %}
+<div style="max-width:380px;margin:9vh auto">
+  <div style="background:var(--navy);border-radius:12px 12px 0 0;padding:26px;text-align:center"><img src="/static/logo-reversed.svg" style="height:46px" alt="ARKVOLT"></div>
+  <form class="card" method="post" action="/login" style="border-radius:0 0 12px 12px">
+    <h2>Proposal Monitor</h2>
+    <p class="muted small" style="margin-top:-6px">Live view of staff proposals &amp; approvals</p>
+    {% if error %}<div class="err" style="margin-bottom:12px">{{ error }}</div>{% endif %}
+    <label>Username</label><input name="username" autocomplete="username" required autofocus>
+    <label style="margin-top:12px">Password</label><input name="password" type="password" autocomplete="current-password" required>
+    <button class="btn g" style="width:100%;justify-content:center;margin-top:16px">Log in</button>
+  </form>
+</div>
+{% endblock %}
