@@ -13,7 +13,7 @@ import secrets
 from pathlib import Path
 
 from fastapi import Depends, FastAPI, Form, Header, HTTPException, Request
-from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse, StreamingResponse
+from fastapi.responses import HTMLResponse, JSONResponse, PlainTextResponse, RedirectResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from sqlalchemy import JSON, Boolean, Column, DateTime, Float, ForeignKey, Integer, String, Text, UniqueConstraint, create_engine, func, select
@@ -24,8 +24,21 @@ ROOT = Path(__file__).resolve().parents[1]
 IST = dt.timezone(dt.timedelta(hours=5, minutes=30))
 
 
+# On Vercel the disk is read-only: never write files there, and say clearly what is missing instead of crashing.
+ON_VERCEL = bool(os.environ.get("VERCEL"))
+SETUP_PROBLEMS: list[str] = []
+
+
 def _db_url():
-    url = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or f"sqlite:///{ROOT / 'monitor.db'}"
+    url = (os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or os.environ.get("POSTGRES_PRISMA_URL")
+           or os.environ.get("NEON_DATABASE_URL"))
+    if not url:
+        if ON_VERCEL:
+            SETUP_PROBLEMS.append("No database is connected. In Vercel open Storage → Create Database → Neon (Postgres), "
+                                  "connect it to this project, then Redeploy.")
+            url = "sqlite://"  # in-memory placeholder so the setup page can render
+        else:
+            url = f"sqlite:///{ROOT / 'monitor.db'}"
     if url.startswith("postgres://"):
         url = "postgresql+psycopg://" + url[len("postgres://"):]
     elif url.startswith("postgresql://"):
@@ -121,7 +134,10 @@ class Approval(Base):
     device = relationship("Device")
 
 
-Base.metadata.create_all(engine)
+try:
+    Base.metadata.create_all(engine)
+except Exception as e:  # noqa: BLE001 — wrong / unreachable database
+    SETUP_PROBLEMS.append(f"Cannot open the database: {type(e).__name__}: {str(e)[:200]}. Check DATABASE_URL in Vercel → Settings → Environment Variables.")
 
 
 def _seed_admin():
@@ -131,6 +147,9 @@ def _seed_admin():
         u = User(username=os.environ.get("ADMIN_USER", "admin").lower(), name="Administrator", role="admin")
         pw = os.environ.get("ADMIN_PASSWORD")
         if not pw:
+            if ON_VERCEL:
+                SETUP_PROBLEMS.append("ADMIN_PASSWORD is not set. Add it in Vercel → Settings → Environment Variables (8+ characters), then Redeploy.")
+                return
             pw = secrets.token_urlsafe(9)
             (ROOT / "FIRST_LOGIN.txt").write_text(f"Monitor login → {u.username} / {pw}\n", encoding="utf-8")
         u.set_password(pw)
@@ -138,18 +157,44 @@ def _seed_admin():
         s.commit()
 
 
-_seed_admin()
+if not SETUP_PROBLEMS:
+    try:
+        _seed_admin()
+    except Exception as e:  # noqa: BLE001
+        SETUP_PROBLEMS.append(f"Database error while creating the admin user: {type(e).__name__}: {str(e)[:200]}")
 
 app = FastAPI(title="ARKVOLT Proposal Monitor")
 secret = os.environ.get("SECRET_KEY")
 if not secret:
-    kf = ROOT / ".secret.key"
-    if not kf.exists():
-        kf.write_text(secrets.token_hex(32))
-    secret = kf.read_text().strip()
+    if ON_VERCEL:
+        SETUP_PROBLEMS.append("SECRET_KEY is not set. Add it in Vercel → Settings → Environment Variables (any random text, 40+ characters), then Redeploy.")
+        secret = secrets.token_hex(32)
+    else:
+        kf = ROOT / ".secret.key"
+        if not kf.exists():
+            kf.write_text(secrets.token_hex(32))
+        secret = kf.read_text().strip()
 app.add_middleware(SessionMiddleware, secret_key=secret, max_age=60 * 60 * 12, same_site="lax",
                    https_only=bool(os.environ.get("VERCEL")))
 app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="static")
+
+
+@app.middleware("http")
+async def setup_check(request, call_next):
+    """Until the deployment is configured, every page explains what to fix instead of crashing."""
+    if SETUP_PROBLEMS and not request.url.path.startswith("/static"):
+        if request.url.path.startswith("/api/"):
+            return JSONResponse({"error": "Monitor not set up", "problems": SETUP_PROBLEMS}, status_code=503)
+        items = "".join(f"<li>{p}</li>" for p in SETUP_PROBLEMS)
+        return HTMLResponse(f"""<!doctype html><meta charset=utf-8><title>Monitor setup</title><link rel=stylesheet href=/static/app.css>
+<main style="max-width:720px"><h1>ARKVOLT Monitor — setup needed</h1><div class=warnbox><ol style="margin:0;padding-left:18px">{items}</ol></div>
+<p class=muted>After changing settings in Vercel, open <b>Deployments</b> → “…” on the latest one → <b>Redeploy</b>.</p></main>""", status_code=503)
+    return await call_next(request)
+
+
+@app.get("/healthz", response_class=PlainTextResponse)
+def healthz():
+    return "ok" if not SETUP_PROBLEMS else "setup needed: " + " | ".join(SETUP_PROBLEMS)
 tpl = Jinja2Templates(directory=ROOT / "app" / "templates")
 
 
