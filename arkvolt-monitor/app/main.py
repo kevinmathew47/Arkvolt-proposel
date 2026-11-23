@@ -186,6 +186,33 @@ app.add_middleware(SessionMiddleware, secret_key=secret, max_age=60 * 60 * 12, s
 app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="static")
 
 
+class _VercelEntryPath:
+    """Vercel routes every request through /api/index (vercel.json); if that internal path ever reaches us,
+    serve the page it stands for instead of a 404."""
+
+    def __init__(self, inner):
+        self.inner = inner
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") == "http":
+            p = scope.get("path", "")
+            if p == "/api/index" or p.startswith("/api/index/"):
+                scope = dict(scope, path=p[len("/api/index"):] or "/", raw_path=(p[len("/api/index"):] or "/").encode())
+        await self.inner(scope, receive, send)
+
+
+app.add_middleware(_VercelEntryPath)
+
+
+@app.exception_handler(404)
+async def not_found(request, exc):
+    if request.url.path.startswith("/api/v1/"):
+        return JSONResponse({"detail": getattr(exc, "detail", "Not Found")}, status_code=404)
+    return HTMLResponse("""<!doctype html><meta charset=utf-8><title>Not found</title><link rel=stylesheet href=/static/app.css>
+<main style="max-width:560px;margin:12vh auto;text-align:center"><h1>Page not found</h1>
+<p class=muted>This address is not part of the ARKVOLT monitor.</p><a class="btn g" href="/">Open the dashboard</a></main>""", status_code=404)
+
+
 @app.middleware("http")
 async def setup_check(request, call_next):
     """Until the deployment is configured, every page explains what to fix instead of crashing."""
