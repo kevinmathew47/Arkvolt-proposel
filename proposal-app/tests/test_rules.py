@@ -4,6 +4,8 @@ import tempfile
 
 os.environ["DATABASE_URL"] = "sqlite:///" + os.path.join(tempfile.mkdtemp(), "t.db")
 
+from sqlalchemy import select  # noqa: E402
+
 from app import pdfgen  # noqa: E402
 from app.billparse import parse_bill_text, parse_receipt_text  # noqa: E402
 from app.compute import advise, compute, load_master  # noqa: E402
@@ -139,3 +141,22 @@ def test_custom_10kw_two_inverters_and_rate_price():
     assert (a["n_inv"], a["inverter"], a["qty"]) == (2, "X5T", 20) and a["price"] == 600000
     assert (b["n_inv"], b["n_bat"], b["inverter"]) == (2, 2, "BHF5K")
     assert any(r[3][0] == "2 Nos." for r in out["bom"] if r[0] == "On-grid inverter")
+
+
+def test_newer_price_list_from_setup_package_updates_laptop_but_keeps_its_link():
+    from app.db import Package, Setting, _refresh_master, export_master
+    with SessionLocal() as s:
+        for k, v in (("monitor_key", "laptop-own-key"), ("monitor_url", "https://laptop.example")):
+            x = s.get(Setting, k) or Setting(key=k); x.value = v; s.add(x)
+        s.commit()
+        m = export_master(s)
+        assert "monitor_key" not in m["settings"] and "master_hash" not in m["settings"]
+        for p in m["packages"]:
+            if p["name"] == "3 kW On-grid · Statcon":
+                p["price"] = 199000
+        m["settings"]["monitor_url"] = "https://other.example"
+        _refresh_master(s, m)
+        s.commit()
+        p3 = s.scalar(select(Package).where(Package.name == "3 kW On-grid · Statcon"))
+        assert p3.price == 199000
+        assert s.get(Setting, "monitor_key").value == "laptop-own-key" and s.get(Setting, "monitor_url").value == "https://laptop.example"

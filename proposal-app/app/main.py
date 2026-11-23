@@ -545,6 +545,69 @@ async def admin_settings(request: Request, u: User = Depends(need("admin")), s=D
     return _back("settings", "Settings saved")
 
 
+# ---------------------------------------------------------------------------------------------
+# First run on a staff laptop (data/NEEDS_SETUP from the setup package)
+# ---------------------------------------------------------------------------------------------
+from .db import SETUP_MARKER  # noqa: E402
+
+
+@app.middleware("http")
+async def first_run(request: Request, call_next):
+    if SETUP_MARKER.exists() and not request.url.path.startswith(("/setup", "/static")):
+        return RedirectResponse("/setup", status_code=303)
+    return await call_next(request)
+
+
+@app.get("/setup", response_class=HTMLResponse)
+def setup_form(request: Request, s=Depends(db)):
+    if not SETUP_MARKER.exists():
+        return RedirectResponse("/", status_code=303)
+    return page(request, "setup.html", None, error=None, f={"monitor_url": monitor.config(s)["url"]})
+
+
+@app.post("/setup")
+async def setup_save(request: Request, s=Depends(db)):
+    if not SETUP_MARKER.exists():
+        return RedirectResponse("/", status_code=303)
+    f = {k: str(v).strip() for k, v in (await request.form()).items()}
+    err = None
+    uname = f.get("staff_username", "").lower()
+    if not f.get("staff_name") or not uname:
+        err = "Enter the staff member's name and a username."
+    elif uname == "admin" or not uname.replace(".", "").replace("_", "").isalnum():
+        err = "Username: letters and numbers only (not 'admin')."
+    elif len(f.get("staff_password", "")) < 6 or f.get("staff_password") != f.get("staff_password2"):
+        err = "Staff password: at least 6 characters, typed the same twice."
+    elif len(f.get("admin_password", "")) < 5:
+        err = "Enter your admin password (the owner's), at least 5 characters."
+    if err:
+        return page(request, "setup.html", None, error=err, f=f)
+    for k in ("monitor_url", "monitor_key"):
+        x = s.get(Setting, k) or Setting(key=k)
+        x.value = f.get(k, "").rstrip("/")
+        s.add(x)
+    adm = s.scalar(select(User).where(User.username == "admin")) or User(username="admin", name="Administrator", role="admin")
+    adm.set_password(f["admin_password"])
+    s.add(adm)
+    staff = s.scalar(select(User).where(User.username == uname)) or User(username=uname)
+    staff.name, staff.role, staff.active = f["staff_name"], "sales", True
+    staff.set_password(f["staff_password"])
+    s.add(staff)
+    s.commit()
+    note = ""
+    if f.get("monitor_url") and f.get("monitor_key"):
+        try:
+            who = await run_in_threadpool(monitor.ping, monitor.config(s))
+            note = f"Connected to the dashboard as {who}."
+        except RuntimeError as e:
+            note = f"Saved, but the dashboard test failed: {e} You can fix it later in Admin → Settings."
+    audit(s, staff.id, "setup", {"staff": uname, "monitor": bool(f.get("monitor_key"))})
+    s.commit()
+    SETUP_MARKER.unlink(missing_ok=True)
+    request.session["uid"] = staff.id
+    return page(request, "setup_done.html", staff, note=note)
+
+
 @app.post("/admin/monitor/test")
 async def admin_monitor_test(u: User = Depends(need("admin")), s=Depends(db)):
     try:

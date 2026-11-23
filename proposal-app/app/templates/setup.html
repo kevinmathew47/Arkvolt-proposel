@@ -1,0 +1,25 @@
+{% extends "base.html" %}
+{% block title %}Set up this laptop{% endblock %}
+{% block body %}
+<div style="max-width:620px;margin:4vh auto">
+  <div style="background:var(--navy);border-radius:12px 12px 0 0;padding:22px;text-align:center"><img src="/static/brand/arkvolt/logo-reversed.svg" style="height:42px" alt="ARKVOLT"></div>
+  <form class="card" method="post" action="/setup" style="border-radius:0 0 12px 12px">
+    <h2>Set up this laptop</h2>
+    <p class="muted small" style="margin-top:-6px">Done once, by the owner or manager, when the app is installed on a staff laptop.</p>
+    {% if error %}<div class="err" style="margin-bottom:12px">{{ error }}</div>{% endif %}
+    <h3 style="margin-top:14px">1 · Staff member who uses this laptop</h3>
+    <div class="grid g2"><div><label>Full name</label><input name="staff_name" value="{{ f.get('staff_name', '') }}" required placeholder="e.g. Ebinraj B"></div>
+      <div><label>Username</label><input name="staff_username" value="{{ f.get('staff_username', '') }}" required placeholder="e.g. ebinraj" autocomplete="off"></div>
+      <div><label>Password</label><input name="staff_password" type="password" required minlength="6" autocomplete="new-password"></div>
+      <div><label>Password again</label><input name="staff_password2" type="password" required minlength="6" autocomplete="new-password"></div></div>
+    <p class="small muted">Staff can make proposals up to the staff limit at your standard prices; anything else needs your approval on the dashboard.</p>
+    <h3 style="margin-top:14px">2 · Your admin password</h3>
+    <div class="grid g2"><div><label>Admin password (owner)</label><input name="admin_password" type="password" required autocomplete="new-password"></div>
+      <div class="small muted" style="align-self:end">Lets you sign in on this laptop as <b>admin</b> to change settings. Do not share it with staff.</div></div>
+    <h3 style="margin-top:14px">3 · Online dashboard</h3>
+    <label>Dashboard address</label><input name="monitor_url" value="{{ f.get('monitor_url') or 'https://arkvolt-proposel.vercel.app' }}">
+    <label style="margin-top:10px">Device key for this laptop</label><input name="monitor_key" value="{{ f.get('monitor_key', '') }}" autocomplete="off" placeholder="from the dashboard: Staff & devices → + Add device">
+    <button class="btn g" style="width:100%;justify-content:center;margin-top:18px">Finish setup</button>
+  </form>
+</div>
+{% endblock %}

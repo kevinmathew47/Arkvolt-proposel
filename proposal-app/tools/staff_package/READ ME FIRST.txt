@@ -1,0 +1,18 @@
+ARKVOLT Proposals - staff laptop setup
+=====================================
+
+1. Copy this whole folder to the laptop (USB / Google Drive), anywhere, e.g. the Desktop.
+2. Double-click  Setup.bat
+   - It checks the laptop (Windows, disk space, internet, Microsoft Edge, Python)
+     and downloads anything that is missing. No administrator password is needed.
+   - First time: about 5 minutes. A blue window shows each step.
+   - If Windows shows "Windows protected your PC", click "More info" -> "Run anyway".
+3. The browser opens "Set up this laptop" - the owner/manager fills it in once:
+   staff name, username and password, the admin password, and the device key
+   from the online dashboard (https://arkvolt-proposel.vercel.app -> Staff & devices -> + Add device).
+4. Done. From then on: double-click "ARKVOLT Proposals" on the desktop.
+
+To update the app later (new prices, new version): copy the new folder and run Setup.bat again.
+Proposals already made on the laptop are kept.
+
+If something goes wrong, Setup tells you what and saves a log you can send to the admin.

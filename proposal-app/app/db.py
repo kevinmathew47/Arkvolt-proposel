@@ -259,12 +259,99 @@ DATASHEETS = {"STC550": "statcon_modules.pdf", "STC600": "statcon_modules.pdf", 
               "BHF3K": "statcon_hybrid_inverter.pdf", "BHF5K": "statcon_hybrid_inverter.pdf", "MIRAKAL": "statcon_mirakal_battery.pdf"}
 
 
+# Staff-laptop install: the setup package ships master.json (the owner's price list, products, company
+# details, tariffs, rules, template text) and creates data/NEEDS_SETUP so the first run asks for logins.
+MASTER_FILE = ROOT / "master.json"
+SETUP_MARKER = DATA / "NEEDS_SETUP"
+PRIVATE_SETTINGS = {"monitor_key", "master_hash"}  # never exported to other laptops
+
+
+def export_master(s) -> dict:
+    return {
+        "companies": {c.brand: c.data for c in s.scalars(select(Company))},
+        "products": [dict(code=p.code, category=p.category, data=p.data, datasheet=p.datasheet, almm=p.almm, active=p.active)
+                     for p in s.scalars(select(Product))],
+        "packages": [dict(brand=p.brand, name=p.name, kw=p.kw, type=p.type, module=p.module, qty=p.qty, inverter=p.inverter,
+                          battery=p.battery, price=p.price, note=p.note, active=p.active) for p in s.scalars(select(Package))],
+        "tariffs": [dict(code=t.code, name=t.name, valid_from=t.valid_from, valid_to=t.valid_to, source=t.source, data=t.data)
+                    for t in s.scalars(select(TariffVersion))],
+        "rules": [dict(valid_from=r.valid_from, note=r.note, data=r.data) for r in s.scalars(select(RuleVersion))],
+        "texts": [dict(brand=t.brand, key=t.key, text=t.text) for t in s.scalars(select(TemplateText))],
+        "settings": {x.key: x.value for x in s.scalars(select(Setting)) if x.key not in PRIVATE_SETTINGS},
+    }
+
+
+def _import_master(s, m: dict):
+    for b, d in m.get("companies", {}).items():
+        s.add(Company(brand=b, data=d))
+    for p in m.get("products", []):
+        s.add(Product(**p))
+    for p in m.get("packages", []):
+        s.add(Package(**p))
+    for t in m.get("tariffs", []):
+        s.add(TariffVersion(**t))
+    for r in m.get("rules", []):
+        s.add(RuleVersion(**r))
+    for t in m.get("texts", []):
+        s.add(TemplateText(**t))
+    for k, v in m.get("settings", {}).items():
+        s.add(Setting(key=k, value=v))
+    s.flush()
+
+
+LAPTOP_SETTINGS = {"monitor_url", "monitor_key", "master_hash"}  # belong to this laptop, never replaced by a package
+
+
+def _refresh_master(s, m: dict):
+    """Apply a newer master.json on an existing laptop: catalogue, prices and text are replaced; tariff and rule
+    versions are only added (old proposals keep reproducing); proposals, users and this laptop's link are kept."""
+    for model in (Company, Product, Package, TemplateText):
+        for row in s.scalars(select(model)):
+            s.delete(row)
+    s.flush()
+    for b, d in m.get("companies", {}).items():
+        s.add(Company(brand=b, data=d))
+    for p in m.get("products", []):
+        s.add(Product(**p))
+    for p in m.get("packages", []):
+        s.add(Package(**p))
+    for t in m.get("texts", []):
+        s.add(TemplateText(**t))
+    have_t = {(t.code, t.valid_from) for t in s.scalars(select(TariffVersion))}
+    for t in m.get("tariffs", []):
+        if (t["code"], t["valid_from"]) not in have_t:
+            s.add(TariffVersion(**t))
+    have_r = {r.valid_from for r in s.scalars(select(RuleVersion))}
+    for r in m.get("rules", []):
+        if r["valid_from"] not in have_r:
+            s.add(RuleVersion(**r))
+    for k, v in m.get("settings", {}).items():
+        if k in LAPTOP_SETTINGS:
+            continue
+        x = s.get(Setting, k) or Setting(key=k)
+        x.value = v
+        s.add(x)
+    s.flush()
+
+
 def init_db() -> str | None:
     """Create tables and seed defaults. Returns a first-login note if an admin user was just created."""
     Base.metadata.create_all(engine)
     note = None
     with SessionLocal() as s:
-        if not s.scalar(select(User).limit(1)):
+        if MASTER_FILE.exists():
+            raw = MASTER_FILE.read_bytes()
+            digest = hashlib.sha256(raw).hexdigest()
+            seen = s.get(Setting, "master_hash")
+            if not s.scalar(select(Company).limit(1)):
+                _import_master(s, json.loads(raw.decode("utf-8")))
+            elif not seen or seen.value != digest:
+                _refresh_master(s, json.loads(raw.decode("utf-8")))  # newer price list from a setup package
+            x = s.get(Setting, "master_hash") or Setting(key="master_hash")
+            x.value = digest
+            s.add(x)
+            s.flush()
+        if not s.scalar(select(User).limit(1)) and not SETUP_MARKER.exists():
             pw = secrets.token_urlsafe(9)
             u = User(username="admin", name="Administrator", role="admin")
             u.set_password(pw)

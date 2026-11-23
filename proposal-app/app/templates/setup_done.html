@@ -1,0 +1,10 @@
+{% extends "base.html" %}
+{% block title %}Ready{% endblock %}
+{% block body %}
+<div style="max-width:560px;margin:8vh auto;text-align:center">
+  <h1>✓ This laptop is ready</h1>
+  <p>Signed in as <b>{{ me.name }}</b>. Next time, open <b>ARKVOLT Proposals</b> from the desktop and log in with your username and password.</p>
+  {% if note %}<div class="{{ 'msg' if note.startswith('Connected') else 'warnbox' }}" style="margin:14px 0;text-align:left">{{ note }}</div>{% endif %}
+  <a class="btn g" href="/new">+ Make the first proposal</a> <a class="btn o" href="/">Proposals</a>
+</div>
+{% endblock %}
