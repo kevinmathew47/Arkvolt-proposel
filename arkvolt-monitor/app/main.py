@@ -190,9 +190,15 @@ app.mount("/static", StaticFiles(directory=ROOT / "app" / "static"), name="stati
 async def setup_check(request, call_next):
     """Until the deployment is configured, every page explains what to fix instead of crashing."""
     if SETUP_PROBLEMS and not request.url.path.startswith("/static"):
-        if request.url.path.startswith("/api/"):
-            return JSONResponse({"error": "Monitor not set up", "problems": SETUP_PROBLEMS}, status_code=503)
+        # what this deployment actually receives from Vercel — setting NAMES only, never values
+        names = sorted(k for k in os.environ if any(w in k.upper() for w in ("DATABASE", "POSTGRES", "PG", "NEON", "STORAGE", "ADMIN", "SECRET")))
+        diag = {"vercel_environment": os.environ.get("VERCEL_ENV", "?"), "code_version": (os.environ.get("VERCEL_GIT_COMMIT_SHA") or "?")[:7],
+                "settings_seen": names or ["(none of DATABASE_URL / POSTGRES_* / ADMIN_PASSWORD / SECRET_KEY)"]}
+        if request.url.path.startswith("/api/v1/"):
+            return JSONResponse({"error": "Monitor not set up", "problems": SETUP_PROBLEMS, "diagnostics": diag}, status_code=503)
         items = "".join(f"<li>{p}</li>" for p in SETUP_PROBLEMS)
+        items += (f"</ol><p class=small style='margin-top:10px'><b>This deployment:</b> environment <b>{diag['vercel_environment']}</b>, "
+                  f"code <b>{diag['code_version']}</b>.<br><b>Settings it can see:</b> {', '.join(diag['settings_seen'])}</p><ol>")
         return HTMLResponse(f"""<!doctype html><meta charset=utf-8><title>Monitor setup</title><link rel=stylesheet href=/static/app.css>
 <main style="max-width:720px"><h1>ARKVOLT Monitor — setup needed</h1><div class=warnbox><ol style="margin:0;padding-left:18px">{items}</ol></div>
 <p class=muted>After changing settings in Vercel, open <b>Deployments</b> → “…” on the latest one → <b>Redeploy</b>.</p></main>""", status_code=503)
