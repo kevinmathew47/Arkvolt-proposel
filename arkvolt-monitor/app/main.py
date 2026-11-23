@@ -33,6 +33,13 @@ def _db_url():
     url = (os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or os.environ.get("POSTGRES_PRISMA_URL")
            or os.environ.get("NEON_DATABASE_URL"))
     if not url:
+        # Vercel's Neon integration can add a custom prefix (e.g. STORAGE_URL, ARKVOLT_DATABASE_URL):
+        # take any variable holding a Postgres address, preferring the pooled *DATABASE_URL / *POSTGRES_URL ones.
+        cands = sorted(((k, v) for k, v in os.environ.items() if v.startswith(("postgres://", "postgresql://"))),
+                       key=lambda kv: (("UNPOOLED" in kv[0] or "NON_POOLING" in kv[0]),
+                                       not kv[0].endswith(("DATABASE_URL", "POSTGRES_URL", "_URL")), kv[0]))
+        url = cands[0][1] if cands else None
+    if not url:
         if ON_VERCEL:
             SETUP_PROBLEMS.append("No database is connected. In Vercel open Storage → Create Database → Neon (Postgres), "
                                   "connect it to this project, then Redeploy.")
